@@ -1,4 +1,4 @@
-#import "@preview/pubmatter:0.2.0"
+#import "@preview/pubmatter:0.2.2"
 
 #let bnextTitle = "Nucleus Developer Notes";
 #let bnextLogo = image("logo.png");
