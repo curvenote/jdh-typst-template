@@ -1,4 +1,4 @@
-#import "bnext.typ": *
+#import "csf.typ": *
 
 [-IMPORTS-]
 

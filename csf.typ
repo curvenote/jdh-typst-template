@@ -1,7 +1,8 @@
 #import "@preview/pubmatter:0.2.2"
 
-#let bnextTitle = "Nucleus Developer Notes";
-#let bnextLogo = image("logo.png");
+#let venueTitle = "Continuous Science Foundation";
+#let venueLogo = image("logo.svg");
+#let venueColor = rgb("#4F6B76");
 
 #let leftCaption(it) = context {
   set text(size: 8pt)
@@ -60,7 +61,7 @@
 
   // Set document metadata.
   set document(title: fm.title, author: fm.authors.map(author => author.name))
-  let theme = (color: rgb("#006837"), font: "Noto Sans")
+  let theme = (color: venueColor, font: "Noto Sans")
   if (page-start != none) {counter(page).update(page-start)}
   state("THEME").update(theme)
   set page(
@@ -83,10 +84,10 @@
     ),
   )
   let logo = [
-    #bnextLogo
+    #venueLogo
     #v(-13pt)
     #align(center)[
-      #text(size: 15pt, weight: "bold", fill: theme.color, font: theme.font, bnextTitle)
+      #text(size: 15pt, weight: "bold", fill: theme.color, font: theme.font, venueTitle)
     ]
     #v(13pt)
   ]
@@ -195,14 +196,6 @@
         #set par(justify: true)
         #set text(size: 7pt)
         #pubmatter.show-copyright(fm)
-      ]
-    ),
-    (
-      title: "Open Source",
-      content: [
-        #set par(justify: true)
-        #set text(size: 7pt)
-        The materials and processes described in this article are distributed under the terms of the #link("https://gitlab.com/ohwr/project/cernohl/-/wikis/uploads/98ff9662c7ce4252ec91104118c2af8e/cern_ohl_p_v2.pdf", "CERN Open Hardware License Permissive 2.0"), which enables reusers to make and convey any component or device that apply the information made explicitly available under this license, so long as all notices are retained.
       ]
     ),
     if fm.at("github", default: none) != none {

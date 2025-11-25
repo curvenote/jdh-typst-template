@@ -5,8 +5,8 @@ description: Nucleus Developer Notes Template
 template: template.typ
 files:
   - template.typ
-  - bnext.typ
-  - logo.png
+  - csf.typ
+  - logo.svg
 authors:
   - name: Franklin Koch
     github: fwkoch
