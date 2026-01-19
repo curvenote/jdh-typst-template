@@ -37,4 +37,3 @@ parts:
     description: >
       An abstract is a short summary of your research paper or report.
     max_words: 500
-    required: true

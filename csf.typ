@@ -253,7 +253,9 @@
     }),
   )
 
-  pubmatter.show-abstract-block(fm)
+  if ("abstract" in fm and parts.abstract != none) {
+    pubmatter.show-abstract-block(fm)
+  }
 
   show par: set par(spacing: 1.4em, justify: true)
 
