@@ -1,25 +1,24 @@
 myst: v1
 kind: typst
-title: b.next Template
-description: Nucleus Developer Notes Template
+title: Journla of Digital History Template
+description: Journal of Digital History Template
 template: template.typ
 files:
   - template.typ
-  - csf.typ
+  - jdh.typ
   - logo.svg
 authors:
-  - name: Franklin Koch
-    github: fwkoch
+  - name: Steve Purves
+    github: stevejpurves
     affiliations:
       - Curvenote
 version: 0.0.1
 license: MIT
 tags:
-  - preprint
   - article
   - paper
 thumbnail: ./thumbnail.png
-github: https://github.com/myst-templates/bnext
+github: https://github.com/curvenote/jdh-pdf
 doc:
   - id: title
     required: true

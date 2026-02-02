@@ -1,7 +1,7 @@
 #import "@preview/pubmatter:0.2.2"
 
-#let venueTitle = "Continuous Science Foundation";
-#let venueLogo = image("logo.svg");
+#let venueTitle = "Journal of Digital History";
+#let venueLogo = image("logo-text.svg");
 #let venueColor = rgb("#4F6B76");
 
 #let leftCaption(it) = context {

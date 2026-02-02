@@ -1,5 +1,5 @@
-# Nucleus Developer Notes
+# Journal of Digital History
 
-A typst template for b.next Nucleus Developer Notes using MyST Markdown.
+A typst template for Journal of Digital History Articles using MyST Markdown.
 
 ![](thumbnail.png)
