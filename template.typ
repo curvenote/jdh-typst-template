@@ -43,6 +43,12 @@
   [# if doc.doi #]
     doi: "[-doc.doi-]",
   [# endif #]
+  [# if options.qr_code #]
+    qr_code: "[-options.qr_code-]",
+  [# endif #]
+  [# if options.fingerprint #]
+    fingerprint: "[-options.fingerprint-]",
+  [# endif #]
   [# if doc.date #]
     date: datetime(
       year: [-doc.date.year-],

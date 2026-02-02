@@ -62,6 +62,8 @@
   body
 ) = {
   let fm0 = pubmatter.load(frontmatter)
+  let qr_code_value = if (type(frontmatter) == dictionary) { frontmatter.at("qr_code", default: none) } else { none }
+  let fingerprint_value = if (type(frontmatter) == dictionary) { frontmatter.at("fingerprint", default: none) } else { none }
   // Enforce JDH Open Access + CC-BY-NC-ND consistently for this template.
   let fm = fm0 + (
     open-access: true,
@@ -70,6 +72,8 @@
       name: "Creative Commons Attribution Non Commercial No Derivatives 4.0 International",
       url: "https://creativecommons.org/licenses/by-nc-nd/4.0/",
     ),
+    qr_code: qr_code_value,
+    fingerprint: fingerprint_value,
   )
   let dates;
   if ("date" in fm and type(fm.date) == datetime) {
@@ -201,7 +205,15 @@
   pubmatter.show-title-block(fm)
 
   let corresponding = fm.authors.filter((author) => "email" in author).at(0, default: none)
-  let margin = (
+  let margin = (    
+    if fm.at("fingerprint", default: none) != none and fm.fingerprint != "" {
+      (
+        title: "Fingerprint",
+        content: [
+          #image(fm.fingerprint, width: 100%)
+        ]
+      )
+    },
     if corresponding != none {
       (
         title: "Correspondence to",
@@ -212,7 +224,7 @@
       )
     },
     (
-      title: [Open Access #h(1fr) #pubmatter.show-license-badge(fm)],
+      title: [License #h(1fr) #pubmatter.show-license-badge(fm)],
       content: [
         #set par(justify: true)
         #set text(size: 7pt)
@@ -221,13 +233,28 @@
     ),
     if fm.at("github", default: none) != none {
       (
-        title: "Data Availability",
+        title: "Github Repository",
         content: [
-          Source code available:\
           #link(fm.github, fm.github)
         ],
       )
     },
+    (
+      title: "Partners",
+      content: [
+        #set par(justify: true)
+        #set text(size: 7pt)
+        This Open Access article was published by De Gruyter in cooperation with the University of Luxembourg Centre for Contemporary and Digital History.
+      ]
+    ),
+    if fm.at("qr_code", default: none) != none and fm.qr_code != "" {
+      (
+        title: "Explore the full interactive article",
+        content: [
+          #image(fm.qr_code, width: 20mm, height: 20mm)
+        ]
+      )
+    }
   ).filter((m) => m != none)
 
   place(

@@ -31,6 +31,15 @@ doc:
   - id: doi
   - id: github
   - id: first_page
+
+options:
+  - id: qr_code
+    type: file
+    description: Path to a QR code image to render in the sidebar.
+  - id: fingerprint
+    type: file
+    description: Path to a fingerprint image to render in the sidebar.
+
 parts:
   - id: abstract
     description: >
