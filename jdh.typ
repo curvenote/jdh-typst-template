@@ -4,6 +4,18 @@
 #let venueLogo = image("logo-text.svg");
 #let venueColor = rgb("#4F6B76");
 
+#let show-jdh-copyright(fm) = {
+  let author-names = if ("authors" in fm and fm.authors.len() > 0) {
+    fm.authors.map(author => author.name).join(", ", last: ", and ")
+  } else {
+    none
+  }
+  let license-url = "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+  [
+    © #author-names. Published by De Gruyter in cooperation with the University of Luxembourg Centre for Contemporary and Digital History. This is an Open Access article distributed under the terms of the #link(license-url)[Creative Commons Attribution License CC-BY-NC-ND]
+  ]
+}
+
 #let leftCaption(it) = context {
   set text(size: 8pt)
   set align(left)
@@ -49,7 +61,16 @@
   // The paper's content.
   body
 ) = {
-  let fm = pubmatter.load(frontmatter)
+  let fm0 = pubmatter.load(frontmatter)
+  // Enforce JDH Open Access + CC-BY-NC-ND consistently for this template.
+  let fm = fm0 + (
+    open-access: true,
+    license: (
+      id: "CC-BY-NC-ND-4.0",
+      name: "Creative Commons Attribution Non Commercial No Derivatives 4.0 International",
+      url: "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+    ),
+  )
   let dates;
   if ("date" in fm and type(fm.date) == datetime) {
     dates = ((title: "Published", date: fm.date),)
@@ -195,7 +216,7 @@
       content: [
         #set par(justify: true)
         #set text(size: 7pt)
-        #pubmatter.show-copyright(fm)
+        #show-jdh-copyright(fm)
       ]
     ),
     if fm.at("github", default: none) != none {
