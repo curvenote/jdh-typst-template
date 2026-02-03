@@ -1,8 +1,7 @@
 #import "@preview/pubmatter:0.2.2"
 
-#let venueTitle = "Journal of Digital History";
-#let venueLogo = image("logo-text.svg");
-#let venueColor = rgb("#4F6B76");
+#let venueLogo = "logo-text.svg";
+#let venueColor = rgb("#000");
 
 #let show-jdh-copyright(fm) = {
   let author-names = if ("authors" in fm and fm.authors.len() > 0) {
@@ -92,7 +91,7 @@
   set page(
     paper: paper-size,
     margin: (left: 25%),
-    header: pubmatter.show-page-header(fm),
+    header: none,
     footer: block(
       width: 100%,
       stroke: (top: 1pt + gray),
@@ -108,14 +107,16 @@
       ]
     ),
   )
+
   let logo = [
-    #venueLogo
-    #v(-13pt)
-    #align(center)[
-      #text(size: 15pt, weight: "bold", fill: theme.color, font: theme.font, venueTitle)
-    ]
-    #v(13pt)
+    #image(venueLogo, width: 100%)
   ]
+
+  let fingerprint = if fm.at("fingerprint", default: none) != none and fm.fingerprint != "" {
+    [image(fm.fingerprint, width: 100%)]
+  } else {
+    none
+  }
 
   show link: it => [#text(fill: theme.color)[#it]]
   show ref: it => {
@@ -190,10 +191,10 @@
       box(
         width: 27%,
         {
-          if (type(logo) == content) {
-            logo
-          } else {
-            image(logo, width: 100%)
+          logo
+          if fingerprint != none {
+            v(1em)
+            fingerprint
           }
         },
       ),
@@ -205,15 +206,15 @@
   pubmatter.show-title-block(fm)
 
   let corresponding = fm.authors.filter((author) => "email" in author).at(0, default: none)
-  let margin = (    
-    if fm.at("fingerprint", default: none) != none and fm.fingerprint != "" {
-      (
-        title: "Fingerprint",
-        content: [
-          #image(fm.fingerprint, width: 100%)
-        ]
-      )
-    },
+  let margin = (
+    (
+      title: [License #h(1fr) #pubmatter.show-license-badge(fm)],
+      content: [
+        #set par(justify: true)
+        #set text(size: 7pt)
+        #show-jdh-copyright(fm)
+      ]
+    ),
     if corresponding != none {
       (
         title: "Correspondence to",
@@ -223,14 +224,6 @@
         ],
       )
     },
-    (
-      title: [License #h(1fr) #pubmatter.show-license-badge(fm)],
-      content: [
-        #set par(justify: true)
-        #set text(size: 7pt)
-        #show-jdh-copyright(fm)
-      ]
-    ),
     if fm.at("github", default: none) != none {
       (
         title: "Github Repository",
@@ -251,7 +244,7 @@
       (
         title: "Explore the full interactive article",
         content: [
-          #image(fm.qr_code, width: 20mm, height: 20mm)
+          #image(fm.qr_code, width: 1.2cm, height: 1.2cm)
         ]
       )
     }
@@ -263,30 +256,6 @@
     dy: -10pt,
     box(width: 27%, {
       set text(font: theme.font)
-      if (kind != none) {
-        show par: set par(spacing: 0em)
-        text(11pt, fill: theme.color, weight: "semibold", smallcaps(kind))
-        parbreak()
-      }
-      if (dates != none) {
-        let formatted-dates
-
-        grid(columns: (40%, 60%), gutter: 7pt,
-          ..dates.zip(range(dates.len())).map((formatted-dates) => {
-            let d = formatted-dates.at(0);
-            let i = formatted-dates.at(1);
-            let weight = "light"
-            if (i == 0) {
-              weight = "bold"
-            }
-            return (
-              text(size: 7pt, fill: theme.color, weight: weight, d.title),
-              text(size: 7pt, d.date.display("[month repr:short] [day], [year]"))
-            )
-          }).flatten()
-        )
-      }
-      v(2em)
       grid(columns: 1, gutter: 2em, ..margin.map(side => {
         text(size: 7pt, {
           if ("title" in side) {

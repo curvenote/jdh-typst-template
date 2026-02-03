@@ -6,7 +6,7 @@ template: template.typ
 files:
   - template.typ
   - jdh.typ
-  - logo.svg
+  - logo-text.svg
 authors:
   - name: Steve Purves
     github: stevejpurves
@@ -31,7 +31,6 @@ doc:
   - id: doi
   - id: github
   - id: first_page
-
 options:
   - id: qr_code
     type: file
@@ -39,7 +38,6 @@ options:
   - id: fingerprint
     type: file
     description: Path to a fingerprint image to render in the sidebar.
-
 parts:
   - id: abstract
     description: >
