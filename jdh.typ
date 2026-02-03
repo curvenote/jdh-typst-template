@@ -1,7 +1,7 @@
 #import "@preview/pubmatter:0.2.2"
 
 #let venueLogo = "logo-text.svg";
-#let venueColor = rgb("#000");
+#let venueColor = rgb("#5E2AFF");
 
 #let show-jdh-copyright(fm) = {
   let author-names = if ("authors" in fm and fm.authors.len() > 0) {
@@ -113,7 +113,7 @@
   ]
 
   let fingerprint = if fm.at("fingerprint", default: none) != none and fm.fingerprint != "" {
-    [image(fm.fingerprint, width: 100%)]
+    [#image(fm.fingerprint, width: 100%)]
   } else {
     none
   }
