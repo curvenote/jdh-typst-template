@@ -2,6 +2,10 @@
 
 #let venueLogo = "logo-text.svg";
 #let venueColor = rgb("#5E2AFF");
+// Title matches body (black); links and refs use the accent purple
+#let titleColor = black;
+#let linkColor = venueColor;
+#let refColor = venueColor;
 
 #let show-jdh-copyright(fm) = {
   let author-names = if ("authors" in fm and fm.authors.len() > 0) {
@@ -85,7 +89,13 @@
 
   // Set document metadata.
   set document(title: fm.title, author: fm.authors.map(author => author.name))
-  let theme = (color: venueColor, font: "Noto Sans")
+  let theme = (
+    color: titleColor,
+    title-color: titleColor,
+    link-color: linkColor,
+    ref-color: refColor,
+    font: "Noto Sans",
+  )
   if (page-start != none) {counter(page).update(page-start)}
   state("THEME").update(theme)
   set page(
@@ -118,16 +128,16 @@
     none
   }
 
-  show link: it => [#text(fill: theme.color)[#it]]
+  show link: it => [#text(fill: theme.link-color)[#it]]
   show ref: it => {
     if (it.element == none)  {
       // This is a citation showing 2024a or [1]
-      show regex("([\d]{1,4}[a-z]?)"): it => text(fill: theme.color, it)
+      show regex("([\d]{1,4}[a-z]?)"): it => text(fill: theme.ref-color, it)
       it
       return
     }
     // The rest of the references, like `Figure 1`
-    set text(fill: theme.color)
+    set text(fill: theme.ref-color)
     it
   }
 
@@ -224,14 +234,17 @@
         ],
       )
     },
-    if fm.at("github", default: none) != none {
-      (
-        title: "Github Repository",
-        content: [
-          #link(fm.github, fm.github)
-        ],
-      )
-    },
+    (
+      title: "Github Repository",
+      content: [
+        #let raw = fm.at("github", default: none)
+        #if type(raw) == str and raw != "" {
+          link(raw, raw)
+        } else {
+          "Unknown repository"
+        }
+      ],
+    ),
     (
       title: "Partners",
       content: [
@@ -259,7 +272,7 @@
       grid(columns: 1, gutter: 2em, ..margin.map(side => {
         text(size: 7pt, {
           if ("title" in side) {
-            text(fill: theme.color, weight: "bold", side.title)
+            text(fill: theme.title-color, weight: "bold", side.title)
             [\ ]
           }
           set enum(indent: 0.1em, body-indent: 0.25em)
