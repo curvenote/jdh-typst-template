@@ -115,12 +115,14 @@
 
   // Set document metadata.
   set document(title: fm.title, author: fm.authors.map(author => author.name))
+  // Body and all text use Libertinus Serif (local: fonts/libertinus_serif).
+  // If not installed system-wide, compile with: typst compile --font-path fonts/libertinus_serif ...
   let theme = (
     color: titleColor,
     title-color: titleColor,
     link-color: linkColor,
     ref-color: refColor,
-    font: "Noto Sans",
+    font: "Libertinus Serif",
   )
   if (page-start != none) {counter(page).update(page-start)}
   state("THEME").update(theme)
