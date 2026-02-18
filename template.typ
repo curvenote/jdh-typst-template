@@ -23,11 +23,6 @@
 #show: template.with(
   frontmatter: (
     title: "[-doc.title-]",
-  [# if parts.abstract #]
-    abstract: [
-      [-parts.abstract-]
-    ],
-  [# endif #]
   [# if doc.subtitle #]
     subtitle: "[-doc.subtitle-]",
   [# endif #]
@@ -51,12 +46,6 @@
     [# else #]
     venue: (title: "[-doc.venue-]", url: ""),
     [# endif #]
-  [# endif #]
-  [# if options.qr_code #]
-    qr_code: "[-options.qr_code-]",
-  [# endif #]
-  [# if options.fingerprint #]
-    fingerprint: "[-options.fingerprint-]",
   [# endif #]
   [# if doc.date #]
     date: datetime(
@@ -96,6 +85,19 @@
     ),
   [# if doc.license.content #]
     license: (id: "[-doc.license.content.id-]", name: "[-doc.license.content.name-]", url: "[-doc.license.content.url-]"),
+  [# endif #]
+  ),
+  options: (
+  [# if options.qr_code #]
+    qr_code: "[-options.qr_code-]",
+  [# endif #]
+  [# if options.fingerprint #]
+    fingerprint: "[-options.fingerprint-]",
+  [# endif #]
+  ),
+  parts: (
+  [# if parts.abstract #]
+    abstract: [[-parts.abstract-]],
   [# endif #]
   ),
   [# if doc.first_page #]

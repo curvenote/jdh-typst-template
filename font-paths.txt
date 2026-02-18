@@ -1,0 +1,4 @@
+# Bundled font directories (relative to template root).
+# Used by scripts/compile-with-fonts.sh so typst finds Libertinus Serif and Fira Sans.
+fonts/libertinus_serif
+fonts/fira_sans

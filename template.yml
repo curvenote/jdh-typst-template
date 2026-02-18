@@ -6,6 +6,8 @@ template: template.typ
 files:
   - template.typ
   - jdh.typ
+  - pubmatter.typ
+  - validate-frontmatter.typ
   - logo-text.svg
 authors:
   - name: Steve Purves

@@ -1,11 +1,21 @@
-#import "@preview/pubmatter:0.2.2"
+// Use local pubmatter (development). For the published package, use: #import "@preview/pubmatter:0.2.2"
+#import "./pubmatter.typ"
 
 #let venueLogo = "logo-text.svg";
-#let venueColor = rgb("#5E2AFF");
-// Title matches body (black); links and refs use the accent purple
-#let titleColor = black;
-#let linkColor = venueColor;
-#let refColor = venueColor;
+
+#let jdh-theme = (
+    color: black,
+    font: "Libertinus Serif",
+    title-color: black,
+    title-font: "Fira Sans",
+    link-color: black,
+    ref-color: black,
+    body-size: 10pt,
+    body-weight: 300,
+    body-leading: 1em,
+    body-tracking: 0em,
+)
+
 
 #let show-jdh-copyright(fm) = {
   let author-names = if ("authors" in fm and fm.authors.len() > 0) {
@@ -85,15 +95,17 @@
   // The path to a bibliography file if you want to cite some external works.
   page-start: none,
   max-page: none,
+  // Build options (e.g. qr_code, fingerprint). Resolved separately in the template.
+  options: (),
+  // Content parts from the build (e.g. abstract). Resolved separately in the template.
+  parts: (),
   // The paper's content.
   body
 ) = {
+  // Top-level dictionaries: fm from frontmatter only; options and parts as passed (per template.yml).
   let fm0 = pubmatter.load(frontmatter)
-  let qr_code_value = if (type(frontmatter) == dictionary) { frontmatter.at("qr_code", default: none) } else { none }
-  let fingerprint_value = if (type(frontmatter) == dictionary) { frontmatter.at("fingerprint", default: none) } else { none }
   let venue_value = if (type(frontmatter) == dictionary) { frontmatter.at("venue", default: none) } else { none }
   let github_value = if (type(frontmatter) == dictionary) { frontmatter.at("github", default: none) } else { none }
-  // Enforce JDH Open Access + CC-BY-NC-ND consistently for this template.
   let fm = fm0 + (
     open-access: true,
     license: (
@@ -101,11 +113,13 @@
       name: "Creative Commons Attribution Non Commercial No Derivatives 4.0 International",
       url: "https://creativecommons.org/licenses/by-nc-nd/4.0/",
     ),
-    qr_code: qr_code_value,
-    fingerprint: fingerprint_value,
     venue: (if venue_value != none { venue_value } else { fm0.at("venue", default: none) }),
     github: github_value,
   )
+  let options = if (type(options) == dictionary) { options } else { () }
+  let parts = if (type(parts) == dictionary) { parts } else { () }
+  let parts_abstract = parts.at("abstract", default: none)
+  let abstract_content = if (parts_abstract != none) { parts_abstract } else { fm.at("abstract", default: none) }
   let dates;
   if ("date" in fm and type(fm.date) == datetime) {
     dates = ((title: "Published", date: fm.date),)
@@ -115,15 +129,10 @@
 
   // Set document metadata.
   set document(title: fm.title, author: fm.authors.map(author => author.name))
-  // Body and all text use Libertinus Serif (local: fonts/libertinus_serif).
-  // If not installed system-wide, compile with: typst compile --font-path fonts/libertinus_serif ...
-  let theme = (
-    color: titleColor,
-    title-color: titleColor,
-    link-color: linkColor,
-    ref-color: refColor,
-    font: "Libertinus Serif",
-  )
+  // Font resolution: Typst looks up font names in --font-path dirs, then system fonts.
+  // Bundled paths are listed in font-paths.txt; use scripts/compile-with-fonts.sh TEMPLATE_ROOT input.typ [output].
+  let theme = jdh-theme
+
   if (page-start != none) {counter(page).update(page-start)}
   state("THEME").update(theme)
   set page(
@@ -134,8 +143,8 @@
       width: 100%,
       stroke: (top: 1pt + gray),
       inset: (top: 8pt, right: 2pt),
-      context [
-        #set text(font: theme.font, size: 9pt, fill: gray.darken(50%))
+        context [
+        #set text(font: theme.font, size: theme.body-size, fill: gray.darken(50%))
         #pubmatter.show-spaced-content((
           if("venue" in fm) {
             if type(fm.venue) == dictionary and "title" in fm.venue { emph(fm.venue.title) }
@@ -153,8 +162,9 @@
     #image(venueLogo, width: 100%)
   ]
 
-  let fingerprint = if fm.at("fingerprint", default: none) != none and fm.fingerprint != "" {
-    [#image(fm.fingerprint, width: 100%)]
+  let fingerprint_path = options.at("fingerprint", default: none)
+  let fingerprint = if (fingerprint_path != none and type(fingerprint_path) == str and fingerprint_path != "") {
+    [#image(fingerprint_path, width: 100%)]
   } else {
     none
   }
@@ -173,7 +183,7 @@
   }
 
   // Set the body font.
-  set text(font: theme.font, size: 9pt)
+  set text(font: theme.font, size: theme.body-size, weight: theme.body-weight, tracking: theme.body-tracking)
   // Configure equation numbering and spacing.
   set math.equation(numbering: "(1)")
   show math.equation: set block(spacing: 1em)
@@ -250,6 +260,7 @@
   keywords-badges(fm.at("keywords", default: none))
 
   let corresponding = fm.authors.filter((author) => "email" in author).at(0, default: none)
+  let qr_code_path = options.at("qr_code", default: none)
   let margin = (
     (
       title: "Publication",
@@ -317,11 +328,11 @@
         This Open Access article was published by De Gruyter in cooperation with the University of Luxembourg Centre for Contemporary and Digital History.
       ]
     ),
-    if fm.at("qr_code", default: none) != none and fm.qr_code != "" {
+    if (qr_code_path != none and type(qr_code_path) == str and qr_code_path != "") {
       (
         title: "Explore the full interactive article",
         content: [
-          #image(fm.qr_code, width: 1.2cm, height: 1.2cm)
+          #image(qr_code_path, width: 1.2cm, height: 1.2cm)
         ]
       )
     }
@@ -347,11 +358,11 @@
     }),
   )
 
-  if ("abstract" in fm and parts.abstract != none) {
-    pubmatter.show-abstract-block(fm)
+  if (abstract_content != none) {
+    pubmatter.show-abstract-block(fm + (abstract: abstract_content))
   }
 
-  show par: set par(spacing: 1.4em, justify: true)
+  show par: set par(spacing: 1.4em, justify: true, leading: theme.body-leading)
 
   show raw.where(block: true): (it) => {
       set text(size: 6pt)
