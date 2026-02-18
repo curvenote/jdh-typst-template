@@ -28,7 +28,9 @@ doc:
   - id: short_title
   - id: open_access
   - id: keywords
+  - id: date
   - id: doi
+  - id: venue
   - id: github
   - id: first_page
 options:

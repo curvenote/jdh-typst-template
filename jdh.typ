@@ -19,6 +19,30 @@
   ]
 }
 
+/// Renders keywords as a row of badges (PubMata style).
+/// Accepts either a comma-separated string or an array of strings.
+#let keywords-badges(keywords-val) = {
+  let kws = if keywords-val == none {
+    ()
+  } else if type(keywords-val) == array {
+    keywords-val.map(kw => if type(kw) == str { kw.trim() } else { str(kw) }).filter(kw => kw != "")
+  } else if type(keywords-val) == str and keywords-val.trim() != "" {
+    keywords-val.split(",").map(kw => kw.trim()).filter(kw => kw != "")
+  } else {
+    ()
+  }
+  if kws.len() == 0 {
+    []
+  } else {
+    block(above: 0.6em, below: 0.6em)[
+      #for (i, kw) in kws.enumerate() {
+        box(inset: (left: 5pt, right: 5pt, top: 5pt, bottom: 5pt), stroke: 0.5pt + gray.darken(80%), fill: white, radius: 3pt)[#set text(size: 8pt); #kw]
+        if i < kws.len() - 1 { h(6pt) }
+      }
+    ]
+  }
+}
+
 #let leftCaption(it) = context {
   set text(size: 8pt)
   set align(left)
@@ -67,6 +91,8 @@
   let fm0 = pubmatter.load(frontmatter)
   let qr_code_value = if (type(frontmatter) == dictionary) { frontmatter.at("qr_code", default: none) } else { none }
   let fingerprint_value = if (type(frontmatter) == dictionary) { frontmatter.at("fingerprint", default: none) } else { none }
+  let venue_value = if (type(frontmatter) == dictionary) { frontmatter.at("venue", default: none) } else { none }
+  let github_value = if (type(frontmatter) == dictionary) { frontmatter.at("github", default: none) } else { none }
   // Enforce JDH Open Access + CC-BY-NC-ND consistently for this template.
   let fm = fm0 + (
     open-access: true,
@@ -77,12 +103,12 @@
     ),
     qr_code: qr_code_value,
     fingerprint: fingerprint_value,
+    venue: (if venue_value != none { venue_value } else { fm0.at("venue", default: none) }),
+    github: github_value,
   )
   let dates;
   if ("date" in fm and type(fm.date) == datetime) {
     dates = ((title: "Published", date: fm.date),)
-  // } else if (type(date) == dictionary) {
-  //   dates = (date,)
   } else {
     dates = date
   }
@@ -109,7 +135,10 @@
       context [
         #set text(font: theme.font, size: 9pt, fill: gray.darken(50%))
         #pubmatter.show-spaced-content((
-          if("venue" in fm) {emph(fm.venue)},
+          if("venue" in fm) {
+            if type(fm.venue) == dictionary and "title" in fm.venue { emph(fm.venue.title) }
+            else if type(fm.venue) == str { emph(fm.venue) }
+          },
           if("date" in fm and fm.date != none) {fm.date.display("[month repr:long] [day], [year]")}
         ))
         #h(1fr)
@@ -215,8 +244,42 @@
   // Title and subtitle
   pubmatter.show-title-block(fm)
 
+  // Keywords as badges (PubMata style), immediately after authors
+  keywords-badges(fm.at("keywords", default: none))
+
   let corresponding = fm.authors.filter((author) => "email" in author).at(0, default: none)
   let margin = (
+    (
+      title: "Publication",
+      content: [
+        #set par(justify: true)
+        #set text(size: 7pt)
+        Digital Tools\
+        #let pub-date = fm.at("date", default: none)
+        #if type(pub-date) == datetime {
+          "Published on " + pub-date.display("[month repr:short] [day], [year]")
+        } else {
+          "Unknown"
+        }\
+
+        #let doi-val = fm.at("doi", default: none)
+        #if type(doi-val) == str and doi-val != "" {
+          let doi-href = if doi-val.starts-with("https://doi.org/") { doi-val } else if doi-val.starts-with("http") { doi-val } else { "https://doi.org/" + doi-val }
+          let doi-disp = if doi-val.starts-with("https://doi.org/") { "doi.org/" + doi-val.slice(18) } else if doi-val.starts-with("http") { doi-val } else { "doi.org/" + doi-val }
+          link(doi-href, doi-disp)
+        } else {
+          "DOI unknown"
+        }\
+
+        #let venue-url = if type(fm.venue) == dictionary and "url" in fm.venue and fm.venue.url != "" { fm.venue.url } else { none }
+        #let venue-title = if type(fm.venue) == dictionary and "title" in fm.venue { fm.venue.title } else if type(fm.venue) == str { fm.venue } else { "Venue" }
+        #if venue-url != none {
+          link(venue-url, venue-title)
+        } else {
+          "URL unknown"
+        }
+      ],
+    ),
     (
       title: [License #h(1fr) #pubmatter.show-license-badge(fm)],
       content: [
@@ -237,9 +300,8 @@
     (
       title: "Github Repository",
       content: [
-        #let raw = fm.at("github", default: none)
-        #if type(raw) == str and raw != "" {
-          link(raw, raw)
+        #if type(fm.github) == str and fm.github != "" {
+          link(fm.github, fm.github)
         } else {
           "Unknown repository"
         }

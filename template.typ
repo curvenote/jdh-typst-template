@@ -39,9 +39,18 @@
   [# endif #]
   [# if doc.github !== undefined #]
     github: "[-doc.github-]",
+  [# elif project !== undefined and project.github !== undefined #]
+    github: "[-project.github-]",
   [# endif #]
   [# if doc.doi #]
     doi: "[-doc.doi-]",
+  [# endif #]
+  [# if doc.venue #]
+    [# if doc.venue.title #]
+    venue: (title: "[-doc.venue.title-]", url: "[# if doc.venue.url #][-doc.venue.url-][# endif #]"),
+    [# else #]
+    venue: (title: "[-doc.venue-]", url: ""),
+    [# endif #]
   [# endif #]
   [# if options.qr_code #]
     qr_code: "[-options.qr_code-]",
