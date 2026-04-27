@@ -8,12 +8,29 @@
     font: "Libertinus Serif",
     title-color: black,
     title-font: "Fira Sans",
+    title-size: 23pt,
+    title-leading: 0.5em,
+    author-box-gap-after-name: 8pt,
+    author-box-gap-after-affiliation: 2pt,
+    author-box-size: 11pt,
+    author-box-meta-size: 10.6pt,
+    keyword-badges-above: 0.6em,
+    keyword-badges-below: 0.6em,
     link-color: black,
     ref-color: black,
-    body-size: 10pt,
+    body-size: 11pt,
     body-weight: 300,
     body-leading: 1em,
+    body-spacing: 3em,
     body-tracking: 0em,
+    // Heading typography from JDH Figma tokens (px converted to pt at 96dpi).
+    // 10px -> 7.5pt, 12px -> 9pt, 14px -> 10.5pt, 20px line-height -> 15pt.
+    heading: (
+      abstract: (size: 10pt, weight: 700, line_height: 15pt),
+      h1: (size: 14pt, weight: 700, line_height: 20pt),
+      h2: (size: 12pt, weight: 700, line_height: 20pt),
+      h3: (size: 10pt, weight: 700, line_height: 20pt),
+    ),
 )
 
 
@@ -31,7 +48,7 @@
 
 /// Renders keywords as a row of badges (PubMata style).
 /// Accepts either a comma-separated string or an array of strings.
-#let keywords-badges(keywords-val) = {
+#let keywords-badges(theme, keywords-val, above: none, below: none) = {
   let kws = if keywords-val == none {
     ()
   } else if type(keywords-val) == array {
@@ -44,9 +61,12 @@
   if kws.len() == 0 {
     []
   } else {
-    block(above: 0.6em, below: 0.6em)[
+    block(
+      above: if above != none { above } else { theme.at("keyword-badges-above", default: 1.2em) },
+      below: if below != none { below } else { theme.at("keyword-badges-below", default: 0.6em) },
+    )[
       #for (i, kw) in kws.enumerate() {
-        box(inset: (left: 5pt, right: 5pt, top: 5pt, bottom: 5pt), stroke: 0.5pt + gray.darken(80%), fill: white, radius: 3pt)[#set text(size: 8pt); #kw]
+        box(inset: (left: 6pt, right: 6pt, top: 5.5pt, bottom: 5.5pt), stroke: 0.5pt + gray.darken(80%), fill: white, radius: 3pt)[#set text(size: 9pt); #kw]
         if i < kws.len() - 1 { h(6pt) }
       }
     ]
@@ -89,7 +109,7 @@
 
 #let template(
   frontmatter: (),
-  heading-numbering: "1.1.1",
+  heading-numbering: none,
   kind: none,
   paper-size: "us-letter",
   // The path to a bibliography file if you want to cite some external works.
@@ -116,10 +136,16 @@
     venue: (if venue_value != none { venue_value } else { fm0.at("venue", default: none) }),
     github: github_value,
   )
-  let options = if (type(options) == dictionary) { options } else { () }
-  let parts = if (type(parts) == dictionary) { parts } else { () }
+  let options = if (type(options) == dictionary) { options } else { (:) }
+  let parts = if (type(parts) == dictionary) { parts } else { (:) }
   let parts_abstract = parts.at("abstract", default: none)
-  let abstract_content = if (parts_abstract != none) { parts_abstract } else { fm.at("abstract", default: none) }
+  let nested_parts = fm.at("parts", default: ())
+  let nested_parts_abstract = if (type(nested_parts) == dictionary) { nested_parts.at("abstract", default: none) } else { none }
+  let abstract_content = if (parts_abstract != none) {
+    parts_abstract
+  } else if (nested_parts_abstract != none) {
+    nested_parts_abstract
+  }
   let dates;
   if ("date" in fm and type(fm.date) == datetime) {
     dates = ((title: "Published", date: fm.date),)
@@ -132,6 +158,7 @@
   // Font resolution: Typst looks up font names in --font-path dirs, then system fonts.
   // Bundled paths are listed in font-paths.txt; use scripts/compile-with-fonts.sh TEMPLATE_ROOT input.typ [output].
   let theme = jdh-theme
+  let heading-theme = theme.heading
 
   if (page-start != none) {counter(page).update(page-start)}
   state("THEME").update(theme)
@@ -192,19 +219,24 @@
   set enum(indent: 10pt, body-indent: 9pt)
   set list(indent: 10pt, body-indent: 9pt)
 
-  // Configure headings.
-  set heading(numbering: heading-numbering)
+  // Configure headings: numbering is disabled for this template.
+  set heading(numbering: none)
   show heading: it => context {
     let loc = here()
     // Find out the final number of the heading counter.
     let levels = counter(heading).at(loc)
-    set text(10pt, weight: 400)
+    set text(size: heading-theme.h3.size, weight: heading-theme.h3.weight)
+    set par(leading: heading-theme.h3.line_height)
     if it.level == 1 [
       // First-level headings are centered smallcaps.
       // We don't want to number of the acknowledgment section.
       #let is-ack = it.body in ([Acknowledgment], [Acknowledgement],[Acknowledgments], [Acknowledgements])
       // #set align(center)
-      #set text(if is-ack { 10pt } else { 12pt })
+      #set text(
+        size: if is-ack { heading-theme.abstract.size } else { heading-theme.h1.size },
+        weight: if is-ack { heading-theme.abstract.weight } else { heading-theme.h1.weight },
+      )
+      #set par(leading: if is-ack { heading-theme.abstract.line_height } else { heading-theme.h1.line_height })
       #show: smallcaps
       #show: block.with(above: 20pt, below: 13.75pt, sticky: true)
       #if it.numbering != none and not is-ack {
@@ -216,7 +248,8 @@
     ] else if it.level == 2 [
       // Second-level headings are run-ins.
       #set par(first-line-indent: 0pt)
-      #set text(style: "italic")
+      #set text(size: heading-theme.h2.size, weight: heading-theme.h2.weight, style: "italic")
+      #set par(leading: heading-theme.h2.line_height)
       #show: block.with(above: 15pt, below: 13.75pt, sticky: true)
       #if it.numbering != none {
         numbering(heading-numbering, ..levels)
@@ -226,6 +259,8 @@
       #it.body
     ] else [
       // Third level headings are run-ins too, but different.
+      #set text(size: heading-theme.h3.size, weight: heading-theme.h3.weight)
+      #set par(leading: heading-theme.h3.line_height)
       #show: block.with(above: 15pt, below: 13.75pt, sticky: true)
       #if it.level == 3 {
         numbering(heading-numbering, ..levels)
@@ -238,17 +273,17 @@
     place(
       top,
       dx: -33%,
+      dy: -40pt,
       float: false,
-      box(
-        width: 27%,
-        {
-          logo
-          if fingerprint != none {
-            v(1em)
-            fingerprint
-          }
-        },
-      ),
+      box(width: 70pt, logo),
+    )
+  }
+  if (fingerprint != none) {
+    place(
+      top,
+      dx: -33%,
+      float: false,
+      box(width: 27%, fingerprint),
     )
   }
 
@@ -256,8 +291,22 @@
   // Title and subtitle
   pubmatter.show-title-block(fm)
 
-  // Keywords as badges (PubMata style), immediately after authors
-  keywords-badges(fm.at("keywords", default: none))
+  // Render abstract section directly under authors when present:
+  // title -> keyword badges -> abstract body (italic).
+  if (abstract_content != none) {
+    block(above: 1em, below: 0.6em)[
+      #set text(font: theme.font, size: theme.body-size, weight: theme.body-weight, tracking: theme.body-tracking)
+      #text(fill: theme.color, weight: "semibold", "Abstract")
+      #parbreak()
+      #keywords-badges(theme, fm.at("keywords", default: none))
+      #parbreak()
+      #set par(justify: true, leading: theme.body-leading)
+      #text(style: "italic", abstract_content)
+    ]
+  } else {
+    // Without abstract, keep keywords immediately after authors.
+    keywords-badges(theme, fm.at("keywords", default: none))
+  }
 
   let corresponding = fm.authors.filter((author) => "email" in author).at(0, default: none)
   let qr_code_path = options.at("qr_code", default: none)
@@ -358,11 +407,7 @@
     }),
   )
 
-  if (abstract_content != none) {
-    pubmatter.show-abstract-block(fm + (abstract: abstract_content))
-  }
-
-  show par: set par(spacing: 1.4em, justify: true, leading: theme.body-leading)
+  show par: set par(spacing: theme.body-spacing, justify: true, leading: theme.body-leading)
 
   show raw.where(block: true): (it) => {
       set text(size: 6pt)

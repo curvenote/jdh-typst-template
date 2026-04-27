@@ -98,6 +98,8 @@
   parts: (
   [# if parts.abstract #]
     abstract: [[-parts.abstract-]],
+  [# elif doc.parts and doc.parts.abstract #]
+    abstract: [[-doc.parts.abstract-]],
   [# endif #]
   ),
   [# if doc.first_page #]
