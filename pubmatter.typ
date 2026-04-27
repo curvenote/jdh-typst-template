@@ -610,7 +610,7 @@
       text(fill: theme.color, weight: "semibold", abs.title)
       parbreak()
       set par(justify: true, leading: body-leading)
-      text(style: "italic", abs.content)
+      abs.content
     }).join(parbreak())
   })
 }
@@ -654,6 +654,7 @@
 /// - fm (fm): The frontmatter object
 /// -> content
 #let show-abstract-block(fm) = {
-  box(inset: (top: 16pt, bottom: 16pt), show-abstracts(fm))
+  box(inset: (top: 16pt, bottom: 16pt), stroke: (top: 0.5pt + gray.lighten(30%), bottom: 0.5pt + gray.lighten(30%)), show-abstracts(fm))
+  show-keywords(fm)
   v(10pt)
 }

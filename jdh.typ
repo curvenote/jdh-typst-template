@@ -10,12 +10,16 @@
     title-font: "Fira Sans",
     title-size: 23pt,
     title-leading: 0.5em,
-    author-box-gap-after-name: 8pt,
-    author-box-gap-after-affiliation: 2pt,
+    author-box-gap-after-name: 9pt,
+    author-box-gap-after-affiliation: 7.6pt,
     author-box-size: 11pt,
     author-box-meta-size: 10.6pt,
-    keyword-badges-above: 0.6em,
-    keyword-badges-below: 0.6em,
+    keyword-badges-above: 1.2em,
+    keyword-badges-below: 1.2em,
+    keyword-badge-border-width: 0.4pt,
+    keyword-badge-border-color: gray.darken(50%),
+    keyword-badge-radius: 2pt,
+    keyword-badge-text-size: 9pt,
     link-color: black,
     ref-color: black,
     body-size: 11pt,
@@ -66,7 +70,20 @@
       below: if below != none { below } else { theme.at("keyword-badges-below", default: 0.6em) },
     )[
       #for (i, kw) in kws.enumerate() {
-        box(inset: (left: 6pt, right: 6pt, top: 5.5pt, bottom: 5.5pt), stroke: 0.5pt + gray.darken(80%), fill: white, radius: 3pt)[#set text(size: 9pt); #kw]
+        box(
+          inset: (
+            left: theme.at("keyword-badge-padding-x", default: 6pt),
+            right: theme.at("keyword-badge-padding-x", default: 6pt),
+            top: theme.at("keyword-badge-padding-y", default: 5.5pt),
+            bottom: theme.at("keyword-badge-padding-y", default: 5.5pt),
+          ),
+          stroke: theme.at("keyword-badge-border-width", default: 0.5pt) + theme.at("keyword-badge-border-color", default: gray.darken(80%)),
+          fill: white,
+          radius: theme.at("keyword-badge-radius", default: 3pt),
+        )[
+          #set text(size: theme.at("keyword-badge-text-size", default: 9pt))
+          #kw
+        ]
         if i < kws.len() - 1 { h(6pt) }
       }
     ]
