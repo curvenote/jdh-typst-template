@@ -35,6 +35,32 @@
       h2: (size: 12pt, weight: 700, line_height: 20pt),
       h3: (size: 10pt, weight: 700, line_height: 20pt),
     ),
+    // Paragraph numbering (margin-anchored counters next to each block).
+    paragraph-number: (
+      size: 10pt,
+      weight: "regular",
+      style: "normal",
+      fill: gray.darken(20%),
+      // Horizontal offset of the number column's left edge from the body
+      // text column's left edge (negative = into the left margin).
+      margin: 2.5em,
+      // Width of the number column; the digits are right-aligned in it,
+      // so the right edge sits `margin - width` to the left of the body.
+      width: 2em,
+      // Vertical offset of the number's top relative to the top of the
+      // first line of the anchored block. Used by the heading rule
+      // (block-level place anchored at the heading's top edge). 0pt
+      // aligns the number's top with the line's top; positive values
+      // push it down toward the line's baseline.
+      baseline: 0.1em,
+      // Same idea, but for paragraphs. The inline `box()` we use to
+      // make the place follow page breaks anchors the place at the
+      // first line's *baseline* (inline boxes sit on the baseline by
+      // default), so we have to shift up by roughly the line's ascent
+      // to get the number aligned with the line top. Tune in em units
+      // of the body text size.
+      inline-baseline: -0.64em,
+    ),
 )
 
 
@@ -176,6 +202,84 @@
   // Bundled paths are listed in font-paths.txt; use scripts/compile-with-fonts.sh TEMPLATE_ROOT input.typ [output].
   let theme = jdh-theme
   let heading-theme = theme.heading
+  let pnum-theme = theme.at("paragraph-number", default: (
+    size: 9pt,
+    weight: "regular",
+    style: "normal",
+    fill: gray.darken(20%),
+    margin: 3em,
+    width: 2em,
+    baseline: 0.1em,
+    inline-baseline: -0.75em,
+  ))
+
+  // --- Paragraph numbering helpers ---
+  // Numbers each top-level block (paragraphs, headings) sequentially in
+  // the left margin, matching the JDH Figma design. Code blocks step the
+  // counter but suppress the displayed number. Based on the option-4
+  // workaround from https://github.com/typst/typst/issues/5001.
+  // Defined up here (before the show-heading rule) so the heading rule
+  // can inject `p-display` *inside* its block to align the number with
+  // the heading text rather than the spacing above it.
+  let p-counter = counter("jdh-paragraph")
+  let p-step = p-counter.step()
+  // The `p-skip` state suppresses the show-par numbering for paragraphs
+  // emitted inside a heading body (Typst auto-wraps heading text in a
+  // paragraph, which would otherwise double-step the counter).
+  let p-skip = state("jdh-p-skip", false)
+  // Block-level number used by the heading rule (emitted at block scope
+  // before the heading text). Headings rarely break across pages so a
+  // simple `place()` at flow position is sufficient.
+  //
+  // The whole call is wrapped in `text(size: theme.body-size)` so any
+  // `em` units in the theme (margin, width, baseline) are resolved
+  // against the body font size rather than the surrounding context.
+  // Otherwise headings (with their larger font) would push the number
+  // further left than the paragraph version, causing the columns to
+  // not line up.
+  let p-display = context {
+    text(size: theme.body-size, place(
+      left,
+      dx: -pnum-theme.margin,
+      dy: pnum-theme.at("baseline", default: 0pt),
+      box(
+        width: pnum-theme.width,
+        align(right + top, text(
+          size: pnum-theme.size,
+          weight: pnum-theme.weight,
+          style: pnum-theme.style,
+          fill: pnum-theme.fill,
+          p-counter.display("1"),
+        )),
+      ),
+    ))
+  }
+  // Inline variant used by the paragraph rule. Wrapping `place()` in a
+  // zero-size `box()` lets the place call live *inside* the paragraph
+  // body, so its vertical anchor is the paragraph's first line rather
+  // than the flow position before the paragraph. This keeps the number
+  // with its paragraph across page breaks (otherwise the place lands at
+  // the bottom of the previous page when a paragraph starts after a
+  // page break). The outer `text(size: ...)` keeps em units resolved
+  // against the body size so the inline column lines up exactly with
+  // the heading column.
+  let p-display-inline = context {
+    text(size: theme.body-size, box(width: 0pt, height: 0pt, place(
+      left,
+      dx: -pnum-theme.margin,
+      dy: pnum-theme.at("inline-baseline", default: -0.75em),
+      box(
+        width: pnum-theme.width,
+        align(right + top, text(
+          size: pnum-theme.size,
+          weight: pnum-theme.weight,
+          style: pnum-theme.style,
+          fill: pnum-theme.fill,
+          p-counter.display("1"),
+        )),
+      ),
+    )))
+  }
 
   if (page-start != none) {counter(page).update(page-start)}
   state("THEME").update(theme)
@@ -194,10 +298,9 @@
             if type(fm.venue) == dictionary and "title" in fm.venue { emph(fm.venue.title) }
             else if type(fm.venue) == str { emph(fm.venue) }
           },
-          if("date" in fm and fm.date != none) {fm.date.display("[month repr:long] [day], [year]")}
         ))
         #h(1fr)
-        #counter(page).display()
+        #counter(page).display() of #counter(page).final().first()
       ]
     ),
   )
@@ -256,34 +359,51 @@
       #set par(leading: if is-ack { heading-theme.abstract.line_height } else { heading-theme.h1.line_height })
       #show: smallcaps
       #show: block.with(above: 20pt, below: 13.75pt, sticky: true)
+      // Paragraph number is placed *inside* the block so its `place()` is
+      // anchored to the heading text's top, not to the above-spacing.
+      #p-display
+      #p-step
+      // Skip paragraph numbering inside the heading body (Typst auto-
+      // wraps the body in a paragraph that would otherwise double-step
+      // the counter via the `show par` rule).
+      #p-skip.update(true)
       #if it.numbering != none and not is-ack {
         numbering(heading-numbering, ..levels)
         [.]
         h(7pt, weak: true)
       }
       #it.body
+      #p-skip.update(false)
     ] else if it.level == 2 [
       // Second-level headings are run-ins.
       #set par(first-line-indent: 0pt)
       #set text(size: heading-theme.h2.size, weight: heading-theme.h2.weight, style: "italic")
       #set par(leading: heading-theme.h2.line_height)
       #show: block.with(above: 15pt, below: 13.75pt, sticky: true)
+      #p-display
+      #p-step
+      #p-skip.update(true)
       #if it.numbering != none {
         numbering(heading-numbering, ..levels)
         [.]
         h(7pt, weak: true)
       }
       #it.body
+      #p-skip.update(false)
     ] else [
       // Third level headings are run-ins too, but different.
       #set text(size: heading-theme.h3.size, weight: heading-theme.h3.weight)
       #set par(leading: heading-theme.h3.line_height)
       #show: block.with(above: 15pt, below: 13.75pt, sticky: true)
+      #p-display
+      #p-step
+      #p-skip.update(true)
       #if it.level == 3 {
         numbering(heading-numbering, ..levels)
         [. ]
       }
       _#(it.body)_
+      #p-skip.update(false)
     ]
   }
   if (logo != none) {
@@ -441,6 +561,37 @@
     set block(spacing: 0.9em)
     it
   }
+
+  // --- Paragraph numbering show rules ---
+  // (Counter and `p-display` are defined near the top of the function so
+  // the heading show rule can reuse them.) Headings handle the number
+  // injection themselves inside their block; here we cover paragraphs
+  // (display before, step inside, with a recursion guard) and code
+  // blocks (counter steps but no number is rendered).
+  show par: it => context {
+    // Skip numbering for paragraphs inside headings (handled directly
+    // by the heading show rule) and for our own recursive wrap.
+    let first-child = it.body.at("children", default: ()).at(0, default: none)
+    if p-skip.get() {
+      it
+    } else if first-child == p-display-inline or first-child == p-step {
+      it
+    } else {
+      // Inject the number *inside* the paragraph body via a zero-size
+      // box so its vertical anchor follows the paragraph's first line
+      // across page breaks. (Emitting `place()` at block level before
+      // the par leaves the number at the bottom of the previous page
+      // when the paragraph itself starts on the next page.) The display
+      // must run *before* `p-step` so it reads the pre-step counter
+      // value; otherwise every paragraph would render `n+1`.
+      par(p-display-inline + p-step + it.body)
+    }
+  }
+  show raw.where(block: true): it => p-step + it
+
+  // Start counting from 1: the display reads the counter *before* its
+  // accompanying step, so without this bump the first paragraph shows 0.
+  p-counter.update(1)
 
   // Display the paper's contents.
   body
