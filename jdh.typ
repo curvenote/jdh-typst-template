@@ -81,6 +81,25 @@
       // Deliberately over-extend to the right; the page clips it at the edge.
       // This is more robust than trying to resolve Typst's automatic right margin.
       right-outset: 100%,
+      code-marker: (
+        // Position the marker in the left sidebar column, not in the paragraph
+        // number gutter. Coordinates are relative to the padded code content.
+        width: 12em,
+        dx: -16.5em,
+        // Align marker rules with the cyan block edges. These are relative to
+        // the code content, which starts after the hermeneutics block inset.
+        start-dy: -18pt,
+        // End marker text sits above the line, so subtract approximately one
+        // marker line-height + line gap from the bottom inset.
+        end-dy: 4pt,
+        text-size: 9pt,
+        text-weight: 400,
+        text-fill: black,
+        stroke-width: 0.8pt,
+        stroke-fill: black,
+        line-gap: 6pt,
+        text-line-height: 6pt,
+      ),
     ),
 )
 
@@ -154,6 +173,7 @@
 }
 
 #let paragraph-number-left-offset = state("jdh-paragraph-number-left-offset", 0pt)
+#let in-hermeneutics-block = state("jdh-in-hermeneutics-block", false)
 
 #let smallTableStyle = (
   map-cells: cell => {
@@ -196,9 +216,11 @@
     inset: inset,
     outset: (right: right-outset),
   )[
+    #in-hermeneutics-block.update(true)
     #paragraph-number-left-offset.update(left-inset)
     #body
     #paragraph-number-left-offset.update(0pt)
+    #in-hermeneutics-block.update(false)
   ]
 }
 
@@ -600,6 +622,49 @@
 
   show par: set par(spacing: theme.body-spacing, justify: true, leading: theme.body-leading)
 
+  let hermeneutics-code-marker = (label, kind: "start", dy: 0pt) => context {
+    let hm-def = jdh-theme.at("hermeneutics")
+    let hm = theme.at("hermeneutics", default: hm-def)
+    let marker-def = hm-def.at("code-marker")
+    let marker = hm.at("code-marker", default: marker-def)
+    let marker-width = marker.at("width", default: marker-def.at("width"))
+    let marker-dx = marker.at("dx", default: marker-def.at("dx"))
+    let marker-stroke = marker.at("stroke", default: marker.at("stroke-width", default: marker-def.at("stroke-width")) + marker.at("stroke-fill", default: marker-def.at("stroke-fill")))
+    let marker-line = line(length: 100%, stroke: marker-stroke)
+    let marker-label = {
+      set text(
+        font: theme.at("code", default: jdh-theme.code).at("font", default: "Fira Code"),
+        size: marker.at("text-size", default: marker-def.at("text-size")),
+        weight: marker.at("text-weight", default: marker-def.at("text-weight")),
+        fill: marker.at("text-fill", default: marker-def.at("text-fill")),
+      )
+      set par(leading: marker.at("text-line-height", default: marker-def.at("text-line-height")))
+      align(center, label)
+    }
+    place(
+      left,
+      dx: marker-dx,
+      dy: dy,
+      box(width: marker-width)[
+        #if kind == "end" {
+          stack(
+            dir: ttb,
+            spacing: marker.at("line-gap", default: marker-def.at("line-gap")),
+            marker-label,
+            marker-line,
+          )
+        } else {
+          stack(
+            dir: ttb,
+            spacing: marker.at("line-gap", default: marker-def.at("line-gap")),
+            marker-line,
+            marker-label,
+          )
+        }
+      ],
+    )
+  }
+
   show raw.where(block: true): (it) => {
       let code-theme = theme.at("code", default: jdh-theme.code)
       set text(
@@ -610,7 +675,21 @@
       set raw(theme: none)
       set par(leading: code-theme.at("line-height", default: 16pt))
       set align(left)
-      it
+      if in-hermeneutics-block.get() {
+        let hm-def = jdh-theme.at("hermeneutics")
+        let hm = theme.at("hermeneutics", default: hm-def)
+        let marker-def = hm-def.at("code-marker")
+        let marker = hm.at("code-marker", default: marker-def)
+        [
+          #p-skip.update(true)
+          #hermeneutics-code-marker([HERMENEUTICS\ CODE EXCERPT], kind: "start", dy: marker.at("start-dy", default: marker-def.at("start-dy")))
+          #it
+          #hermeneutics-code-marker([END], kind: "end", dy: marker.at("end-dy", default: marker-def.at("end-dy")))
+          #p-skip.update(false)
+        ]
+      } else {
+        it
+      }
   }
   show figure.caption: leftCaption
   show figure.where(kind: "table"): set figure.caption(position: top)
@@ -628,7 +707,7 @@
   // the heading show rule can reuse them.) Headings handle the number
   // injection themselves inside their block; here we cover paragraphs
   // (display before, step inside, with a recursion guard) and code
-  // blocks (counter steps but no number is rendered).
+  // blocks (which intentionally do not affect paragraph numbering).
   show par: it => context {
     // Skip numbering for paragraphs inside headings (handled directly
     // by the heading show rule) and for our own recursive wrap.
@@ -648,8 +727,6 @@
       par(p-display-inline + p-step + it.body)
     }
   }
-  show raw.where(block: true): it => p-step + it
-
   // Start counting from 1: the display reads the counter *before* its
   // accompanying step, so without this bump the first paragraph shows 0.
   p-counter.update(1)
