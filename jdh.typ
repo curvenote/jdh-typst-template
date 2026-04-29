@@ -27,6 +27,10 @@
     body-leading: 1em,
     body-spacing: 3em,
     body-tracking: 0em,
+    // Explicit right margin (Typst defaults the right side when only `left` is set,
+    // which leaves `page.margin.right` as `auto` and prevents exact bleed maths).
+    // Tune with the body column if needed; typical default is ~11% of page width.
+    page-margin-right: 11.2%,
     // Heading typography from JDH Figma tokens (px converted to pt at 96dpi).
     // 10px -> 7.5pt, 12px -> 9pt, 14px -> 10.5pt, 20px line-height -> 15pt.
     heading: (
@@ -60,6 +64,16 @@
       // to get the number aligned with the line top. Tune in em units
       // of the body text size.
       inline-baseline: -0.64em,
+    ),
+    // Hermeneutics blocks (`:::{hermeneutics}`): fill and insets are tunable here.
+    hermeneutics: (
+      // Background — saturated aqua/cyan (tweak hex to match JDH target PDF).
+      fill: rgb("#D3FFF6"),
+      // Inset inside the colored block (large left pad vs body; generous vertical pad).
+      inset: (left: 2.5em, right: 14pt, top: 18pt, bottom: 18pt),
+      // Deliberately over-extend to the right; the page clips it at the edge.
+      // This is more robust than trying to resolve Typst's automatic right margin.
+      right-outset: 100%,
     ),
 )
 
@@ -132,6 +146,8 @@
   box(width: 135%, it))
 }
 
+#let paragraph-number-left-offset = state("jdh-paragraph-number-left-offset", 0pt)
+
 #let smallTableStyle = (
   map-cells: cell => {
     if (cell.y == 0) {
@@ -149,6 +165,35 @@
     return line
   },
 )
+
+/// Hermeneutics blocks (methodological commentary) from `:::{hermeneutics}` in MyST.
+/// Fill/padding come from `jdh-theme.hermeneutics` via `state("THEME")` (merged in `template`).
+/// Right bleed intentionally over-extends; the page clips the fill at the physical edge.
+#let hermeneutics-block(body) = context {
+  let th = state("THEME").get()
+  let theme = if th == none { jdh-theme } else { th }
+  let hm-def = jdh-theme.at("hermeneutics")
+  let hm = theme.at("hermeneutics", default: hm-def)
+  let fill = hm.at("fill", default: hm-def.at("fill"))
+  let inset = hm.at("inset", default: hm-def.at("inset"))
+  let right-outset = hm.at("right-outset", default: hm-def.at("right-outset"))
+  let left-inset = if type(inset) == dictionary {
+    inset.at("left", default: 0pt)
+  } else {
+    inset
+  }
+  block(
+    breakable: true,
+    spacing: 1em,
+    fill: fill,
+    inset: inset,
+    outset: (right: right-outset),
+  )[
+    #paragraph-number-left-offset.update(left-inset)
+    #body
+    #paragraph-number-left-offset.update(0pt)
+  ]
+}
 
 #let template(
   frontmatter: (),
@@ -238,9 +283,10 @@
   // further left than the paragraph version, causing the columns to
   // not line up.
   let p-display = context {
+    let left-offset = paragraph-number-left-offset.get()
     text(size: theme.body-size, place(
       left,
-      dx: -pnum-theme.margin,
+      dx: -pnum-theme.margin - left-offset,
       dy: pnum-theme.at("baseline", default: 0pt),
       box(
         width: pnum-theme.width,
@@ -264,9 +310,10 @@
   // against the body size so the inline column lines up exactly with
   // the heading column.
   let p-display-inline = context {
+    let left-offset = paragraph-number-left-offset.get()
     text(size: theme.body-size, box(width: 0pt, height: 0pt, place(
       left,
-      dx: -pnum-theme.margin,
+      dx: -pnum-theme.margin - left-offset,
       dy: pnum-theme.at("inline-baseline", default: -0.75em),
       box(
         width: pnum-theme.width,
@@ -285,7 +332,7 @@
   state("THEME").update(theme)
   set page(
     paper: paper-size,
-    margin: (left: 25%),
+    margin: (left: 25%, right: theme.page-margin-right),
     header: none,
     footer: block(
       width: 100%,
