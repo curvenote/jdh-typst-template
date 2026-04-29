@@ -9,6 +9,9 @@ files:
   - pubmatter.typ
   - validate-frontmatter.typ
   - logo-text.svg
+  - font-paths.txt
+  - fonts/fira_code/FiraCode-Regular.ttf
+  - fonts/fira_code/OFL.txt
 authors:
   - name: Steve Purves
     github: stevejpurves

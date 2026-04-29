@@ -27,6 +27,13 @@
     body-leading: 1em,
     body-spacing: 3em,
     body-tracking: 0em,
+    // Code blocks (plain text, no container/padding/syntax highlighting).
+    code: (
+      font: "Fira Code",
+      size: 10pt,
+      weight: 400,
+      line-height: 11pt,
+    ),
     // Explicit right margin (Typst defaults the right side when only `left` is set,
     // which leaves `page.margin.right` as `auto` and prevents exact bleed maths).
     // Tune with the body column if needed; typical default is ~11% of page width.
@@ -594,9 +601,16 @@
   show par: set par(spacing: theme.body-spacing, justify: true, leading: theme.body-leading)
 
   show raw.where(block: true): (it) => {
-      set text(size: 6pt)
+      let code-theme = theme.at("code", default: jdh-theme.code)
+      set text(
+        font: code-theme.at("font", default: "Fira Code"),
+        size: code-theme.at("size", default: 10pt),
+        weight: code-theme.at("weight", default: 400),
+      )
+      set raw(theme: none)
+      set par(leading: code-theme.at("line-height", default: 16pt))
       set align(left)
-      block(sticky: true, fill: luma(240), width: 100%, inset: 10pt, radius: 1pt, it)
+      it
   }
   show figure.caption: leftCaption
   show figure.where(kind: "table"): set figure.caption(position: top)
