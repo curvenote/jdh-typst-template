@@ -30,9 +30,18 @@
     // Code blocks (plain text, no container/padding/syntax highlighting).
     code: (
       font: "Fira Code",
-      size: 10pt,
+      size: 8pt,
       weight: 400,
-      line-height: 11pt,
+      line-height: 10pt,
+      max-lines: 20,
+      fade-lines: 6,
+      // Rendered-line estimate: `max-lines` applies to estimated wrapped lines,
+      // not just newline-separated source lines.
+      wrap-estimate-char: "0",
+      wrap-width-scale: 1.0,
+      more-text-size: 10pt,
+      more-text-weight: 400,
+      more-text-bottom-inset: -2pt,
     ),
     // Explicit right margin (Typst defaults the right side when only `left` is set,
     // which leaves `page.margin.right` as `auto` and prevents exact bleed maths).
@@ -675,21 +684,93 @@
       set raw(theme: none)
       set par(leading: code-theme.at("line-height", default: 16pt))
       set align(left)
-      if in-hermeneutics-block.get() {
-        let hm-def = jdh-theme.at("hermeneutics")
-        let hm = theme.at("hermeneutics", default: hm-def)
-        let marker-def = hm-def.at("code-marker")
-        let marker = hm.at("code-marker", default: marker-def)
-        [
-          #p-skip.update(true)
-          #hermeneutics-code-marker([HERMENEUTICS\ CODE EXCERPT], kind: "start", dy: marker.at("start-dy", default: marker-def.at("start-dy")))
-          #it
-          #hermeneutics-code-marker([END], kind: "end", dy: marker.at("end-dy", default: marker-def.at("end-dy")))
-          #p-skip.update(false)
-        ]
-      } else {
-        it
-      }
+      layout(size => context {
+        let code-lines-all = it.text.split("\n")
+        let code-lines = if code-lines-all.len() > 0 and code-lines-all.at(code-lines-all.len() - 1) == "" {
+          code-lines-all.slice(0, code-lines-all.len() - 1)
+        } else {
+          code-lines-all
+        }
+        let line-height = code-theme.at("line-height", default: 16pt)
+        let max-lines = code-theme.at("max-lines", default: 15)
+        let estimate-char = code-theme.at("wrap-estimate-char", default: "0")
+        let wrap-scale = code-theme.at("wrap-width-scale", default: 1.0)
+        let char-width = measure(text(
+          font: code-theme.at("font", default: "Fira Code"),
+          size: code-theme.at("size", default: 10pt),
+          weight: code-theme.at("weight", default: 400),
+          estimate-char,
+        )).width
+        let chars-per-line = calc.max(1, calc.floor((size.width * wrap-scale) / char-width))
+        let estimated-line-count = {
+          let n = 0
+          for line in code-lines {
+            let chars = line.clusters().len()
+            n += calc.max(1, calc.ceil(chars / chars-per-line))
+          }
+          n
+        }
+        let hidden-lines = if estimated-line-count > max-lines { estimated-line-count - max-lines } else { 0 }
+        let code-body = if hidden-lines > 0 {
+          let fade-lines = code-theme.at("fade-lines", default: 2)
+          let fade-height = fade-lines * line-height
+          let hm-def = jdh-theme.at("hermeneutics")
+          let hm = theme.at("hermeneutics", default: hm-def)
+          let fade-fill = if in-hermeneutics-block.get() {
+            hm.at("fill", default: hm-def.at("fill"))
+          } else {
+            white
+          }
+          block(height: max-lines * line-height)[
+            #block(
+              height: max-lines * line-height,
+              clip: true,
+            )[
+              #it
+            ]
+            #place(
+              bottom,
+              scope: "parent",
+              float: true,
+              block(
+                width: 100%,
+                height: fade-height,
+                fill: gradient.linear(fade-fill.transparentize(100%), fade-fill, angle: 90deg),
+              )[
+              #align(center + bottom)[
+                #box(inset: (bottom: code-theme.at("more-text-bottom-inset", default: 1pt)))[
+                  #text(
+                    font: theme.font,
+                    size: code-theme.at("more-text-size", default: theme.body-size),
+                    weight: code-theme.at("more-text-weight", default: theme.body-weight),
+                    fill: theme.color,
+                  )[
+                    #hidden-lines #if hidden-lines == 1 { "line more" } else { "lines more" }
+                  ]
+                  ]
+                ]
+              ],
+            )
+          ]
+        } else {
+          it
+        }
+        if in-hermeneutics-block.get() {
+          let hm-def = jdh-theme.at("hermeneutics")
+          let hm = theme.at("hermeneutics", default: hm-def)
+          let marker-def = hm-def.at("code-marker")
+          let marker = hm.at("code-marker", default: marker-def)
+          [
+            #p-skip.update(true)
+            #hermeneutics-code-marker([HERMENEUTICS\ CODE EXCERPT], kind: "start", dy: marker.at("start-dy", default: marker-def.at("start-dy")))
+            #code-body
+            #hermeneutics-code-marker([END], kind: "end", dy: marker.at("end-dy", default: marker-def.at("end-dy")))
+            #p-skip.update(false)
+          ]
+        } else {
+          code-body
+        }
+      })
   }
   show figure.caption: leftCaption
   show figure.where(kind: "table"): set figure.caption(position: top)
