@@ -41,7 +41,7 @@
       wrap-width-scale: 1.0,
       more-text-size: 10pt,
       more-text-weight: 400,
-      more-text-bottom-inset: -2pt,
+      more-text-bottom-inset: -4pt,
     ),
     // Explicit right margin (Typst defaults the right side when only `left` is set,
     // which leaves `page.margin.right` as `auto` and prevents exact bleed maths).
