@@ -88,7 +88,7 @@
         dx: -16.5em,
         // Align marker rules with the cyan block edges. These are relative to
         // the code content, which starts after the hermeneutics block inset.
-        start-dy: -18pt,
+        start-dy: -16.5pt,
         // End marker text sits above the line, so subtract approximately one
         // marker line-height + line gap from the bottom inset.
         end-dy: 4pt,
