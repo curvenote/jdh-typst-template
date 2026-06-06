@@ -110,6 +110,12 @@
         text-line-height: 6pt,
       ),
     ),
+    // Narrative code blocks (main-flow code cells, not hermeneutics commentary).
+    narrative-code: (
+      fill: rgb("#E8E8E8"),
+      inset: (left: 0pt, right: 14pt, top: 12pt, bottom: 12pt),
+      right-outset: 100%,
+    ),
 )
 
 
@@ -183,6 +189,7 @@
 
 #let paragraph-number-left-offset = state("jdh-paragraph-number-left-offset", 0pt)
 #let in-hermeneutics-block = state("jdh-in-hermeneutics-block", false)
+#let in-narrative-code-block = state("jdh-in-narrative-code-block", false)
 
 #let smallTableStyle = (
   map-cells: cell => {
@@ -230,6 +237,29 @@
     #body
     #paragraph-number-left-offset.update(0pt)
     #in-hermeneutics-block.update(false)
+  ]
+}
+
+/// Narrative code blocks (main-flow code cells) from the narrative-code MyST plugin.
+/// Fill/padding come from `jdh-theme.narrative-code`; truncation from `jdh-theme.code`.
+#let narrative-code-block(body) = context {
+  let th = state("THEME").get()
+  let theme = if th == none { jdh-theme } else { th }
+  let nc-def = jdh-theme.at("narrative-code")
+  let nc = theme.at("narrative-code", default: nc-def)
+  let fill = nc.at("fill", default: nc-def.at("fill"))
+  let inset = nc.at("inset", default: nc-def.at("inset"))
+  let right-outset = nc.at("right-outset", default: nc-def.at("right-outset"))
+  block(
+    breakable: true,
+    spacing: 1em,
+    fill: fill,
+    inset: inset,
+    outset: (right: right-outset),
+  )[
+    #in-narrative-code-block.update(true)
+    #body
+    #in-narrative-code-block.update(false)
   ]
 }
 
@@ -711,16 +741,20 @@
           n
         }
         let hidden-lines = if estimated-line-count > max-lines { estimated-line-count - max-lines } else { 0 }
+        let hm-def = jdh-theme.at("hermeneutics")
+        let hm = theme.at("hermeneutics", default: hm-def)
+        let nc-def = jdh-theme.at("narrative-code")
+        let nc = theme.at("narrative-code", default: nc-def)
+        let fade-fill = if in-hermeneutics-block.get() {
+          hm.at("fill", default: hm-def.at("fill"))
+        } else if in-narrative-code-block.get() {
+          nc.at("fill", default: nc-def.at("fill"))
+        } else {
+          white
+        }
         let code-body = if hidden-lines > 0 {
           let fade-lines = code-theme.at("fade-lines", default: 2)
           let fade-height = fade-lines * line-height
-          let hm-def = jdh-theme.at("hermeneutics")
-          let hm = theme.at("hermeneutics", default: hm-def)
-          let fade-fill = if in-hermeneutics-block.get() {
-            hm.at("fill", default: hm-def.at("fill"))
-          } else {
-            white
-          }
           block(height: max-lines * line-height)[
             #block(
               height: max-lines * line-height,
@@ -756,8 +790,6 @@
           it
         }
         if in-hermeneutics-block.get() {
-          let hm-def = jdh-theme.at("hermeneutics")
-          let hm = theme.at("hermeneutics", default: hm-def)
           let marker-def = hm-def.at("code-marker")
           let marker = hm.at("code-marker", default: marker-def)
           [
