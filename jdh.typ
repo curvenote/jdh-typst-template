@@ -1,5 +1,8 @@
 // Use local pubmatter (development). For the published package, use: #import "@preview/pubmatter:0.2.2"
 #import "./pubmatter.typ"
+#import "@preview/tablex:0.0.9": tablex, cellx, hlinex, vlinex
+#let tableStyle = (:)
+#let columnStyle = (:)
 
 #let venueLogo = "logo-text.svg";
 
@@ -215,10 +218,16 @@
 #let in-hermeneutics-block = state("jdh-in-hermeneutics-block", false)
 #let in-narrative-code-block = state("jdh-in-narrative-code-block", false)
 #let in-jdh-table-block = state("jdh-in-jdh-table-block", false)
+#let jdh-table-hidden-rows = state("jdh-table-hidden-rows", 0)
 
-/// JDH table wrapper from `jdh-table.mjs`. Applies theme styling and optional
-/// “K rows more” footer (hidden-rows passed from plugin truncation).
-#let jdh-table-block(hidden-rows: 0, hidden-cols: 0, body) = context {
+/// Mark start of a JDH table (sets styling state). Pair with `#jdh-table-footer()`.
+#let jdh-table-enter(hidden-rows: 0, hidden-cols: 0) = {
+  jdh-table-hidden-rows.update(hidden-rows)
+  in-jdh-table-block.update(true)
+}
+
+/// Footer row (“K rows more”) and end of JDH table styling scope.
+#let jdh-table-footer() = context {
   let th = state("THEME").get()
   let theme = if th == none { jdh-theme } else { th }
   let tb-def = jdh-theme.at("table")
@@ -229,22 +238,21 @@
   let more-weight = tb.at("more-weight", default: tb-def.at("more-weight"))
   let border = tb.at("border", default: tb-def.at("border"))
   let border-width = tb.at("border-width", default: tb-def.at("border-width"))
+  let hidden = jdh-table-hidden-rows.get()
+  in-jdh-table-block.update(false)
   block(
     width: 100%,
     stroke: border-width + border,
     inset: 0pt,
   )[
-    #in-jdh-table-block.update(true)
-    #body
-    #in-jdh-table-block.update(false)
-    #if hidden-rows > 0 {
+    #if hidden > 0 {
       block(
         width: 100%,
         fill: stripe,
         inset: (left: row-inset.at("x", default: 4pt), right: row-inset.at("x", default: 4pt), top: row-inset.at("y", default: 6pt), bottom: row-inset.at("y", default: 6pt)),
       )[
         #set text(size: more-size, weight: more-weight)
-        #align(center)[#hidden-rows rows more]
+        #align(center)[#hidden rows more]
       ]
     }
   ]
@@ -881,7 +889,7 @@
   show figure.where(kind: "table"): set figure.caption(position: bottom)
   set figure(placement: auto)
 
-  // JDH table styling (inside `#jdh-table-block` from jdh-table.mjs).
+  // JDH table styling (between `#jdh-table-enter` and `#jdh-table-footer`).
   show table: it => context {
     if not in-jdh-table-block.get() {
       it
@@ -895,20 +903,24 @@
       let row-inset = tb.at("row-inset", default: tb-def.at("row-inset"))
       let header-weight = tb.at("header-weight", default: tb-def.at("header-weight"))
       let body-size = tb.at("body-size", default: tb-def.at("body-size"))
-      set table(
-        stroke: none,
-        inset: (left: row-inset.at("x", default: 4pt), right: row-inset.at("x", default: 4pt), top: row-inset.at("y", default: 6pt), bottom: row-inset.at("y", default: 6pt)),
-        fill: (x, y, _) => {
-          if y == 0 { white }
-          else if calc.rem(y, 2) == 1 { stripe } else { white }
-        },
-      )
-      set text(size: body-size)
-      show table.cell.where(y: 0): set table.cell(
-        inset: (left: header-inset.at("x", default: 4pt), right: header-inset.at("x", default: 4pt), top: header-inset.at("y", default: 2pt), bottom: header-inset.at("y", default: 2pt)),
-      )
-      show table.cell.where(y: 0): set text(weight: header-weight)
-      it
+      let border = tb.at("border", default: tb-def.at("border"))
+      let border-width = tb.at("border-width", default: tb-def.at("border-width"))
+      block(width: 100%, stroke: border-width + border, inset: 0pt)[
+        #set table(
+          stroke: none,
+          inset: (left: row-inset.at("x", default: 4pt), right: row-inset.at("x", default: 4pt), top: row-inset.at("y", default: 6pt), bottom: row-inset.at("y", default: 6pt)),
+          fill: (x, y, _) => {
+            if y == 0 { white }
+            else if calc.rem(y, 2) == 1 { stripe } else { white }
+          },
+        )
+        #set text(size: body-size)
+        #show table.cell.where(y: 0): set table.cell(
+          inset: (left: header-inset.at("x", default: 4pt), right: header-inset.at("x", default: 4pt), top: header-inset.at("y", default: 2pt), bottom: header-inset.at("y", default: 2pt)),
+        )
+        #show table.cell.where(y: 0): set text(weight: header-weight)
+        #it
+      ]
     }
   }
 
