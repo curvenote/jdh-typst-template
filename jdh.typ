@@ -126,6 +126,20 @@
       // Extra vertical shift for the block-level paragraph number (negative = up).
       paragraph-number-dy: -3pt,
     ),
+    // JDH tables (`:::{jdh-table}` from pipeline); truncation defaults match plugin.
+    table: (
+      max-rows: 4,
+      max-columns: 6,
+      header-inset: (x: 4pt, y: 2pt),
+      row-inset: (x: 4pt, y: 6pt),
+      stripe-fill: rgb("#E8E8E8"),
+      border: white,
+      border-width: 0.5pt,
+      header-weight: 700,
+      body-size: 8pt,
+      more-text-size: 8pt,
+      more-weight: 700,
+    ),
 )
 
 
@@ -200,24 +214,41 @@
 #let paragraph-number-left-offset = state("jdh-paragraph-number-left-offset", 0pt)
 #let in-hermeneutics-block = state("jdh-in-hermeneutics-block", false)
 #let in-narrative-code-block = state("jdh-in-narrative-code-block", false)
+#let in-jdh-table-block = state("jdh-in-jdh-table-block", false)
 
-#let smallTableStyle = (
-  map-cells: cell => {
-    if (cell.y == 0) {
-      return (..cell, content: strong(text(cell.content, 5pt)))
+/// JDH table wrapper from `jdh-table.mjs`. Applies theme styling and optional
+/// “K rows more” footer (hidden-rows passed from plugin truncation).
+#let jdh-table-block(hidden-rows: 0, hidden-cols: 0, body) = context {
+  let th = state("THEME").get()
+  let theme = if th == none { jdh-theme } else { th }
+  let tb-def = jdh-theme.at("table")
+  let tb = theme.at("table", default: tb-def)
+  let stripe = tb.at("stripe-fill", default: tb-def.at("stripe-fill"))
+  let row-inset = tb.at("row-inset", default: tb-def.at("row-inset"))
+  let more-size = tb.at("more-text-size", default: tb-def.at("more-text-size"))
+  let more-weight = tb.at("more-weight", default: tb-def.at("more-weight"))
+  let border = tb.at("border", default: tb-def.at("border"))
+  let border-width = tb.at("border-width", default: tb-def.at("border-width"))
+  block(
+    width: 100%,
+    stroke: border-width + border,
+    inset: 0pt,
+  )[
+    #in-jdh-table-block.update(true)
+    #body
+    #in-jdh-table-block.update(false)
+    #if hidden-rows > 0 {
+      block(
+        width: 100%,
+        fill: stripe,
+        inset: (left: row-inset.at("x", default: 4pt), right: row-inset.at("x", default: 4pt), top: row-inset.at("y", default: 6pt), bottom: row-inset.at("y", default: 6pt)),
+      )[
+        #set text(size: more-size, weight: more-weight)
+        #align(center)[#hidden-rows rows more]
+      ]
     }
-    (..cell, content: text(cell.content, 5pt))
-  },
-  auto-vlines: false,
-  map-hlines: line => {
-    if (line.y == 0 or line.y == 1) {
-      line.stroke = gray + 1pt;
-    } else {
-      line.stroke = 0pt;
-    }
-    return line
-  },
-)
+  ]
+}
 
 /// Hermeneutics blocks (methodological commentary) from `:::{hermeneutics}` in MyST.
 /// Fill/padding come from `jdh-theme.hermeneutics` via `state("THEME")` (merged in `template`).
@@ -847,8 +878,39 @@
       })
   }
   show figure.caption: leftCaption
-  show figure.where(kind: "table"): set figure.caption(position: top)
+  show figure.where(kind: "table"): set figure.caption(position: bottom)
   set figure(placement: auto)
+
+  // JDH table styling (inside `#jdh-table-block` from jdh-table.mjs).
+  show table: it => context {
+    if not in-jdh-table-block.get() {
+      it
+    } else {
+      let th = state("THEME").get()
+      let theme = if th == none { jdh-theme } else { th }
+      let tb-def = jdh-theme.at("table")
+      let tb = theme.at("table", default: tb-def)
+      let stripe = tb.at("stripe-fill", default: tb-def.at("stripe-fill"))
+      let header-inset = tb.at("header-inset", default: tb-def.at("header-inset"))
+      let row-inset = tb.at("row-inset", default: tb-def.at("row-inset"))
+      let header-weight = tb.at("header-weight", default: tb-def.at("header-weight"))
+      let body-size = tb.at("body-size", default: tb-def.at("body-size"))
+      set table(
+        stroke: none,
+        inset: (left: row-inset.at("x", default: 4pt), right: row-inset.at("x", default: 4pt), top: row-inset.at("y", default: 6pt), bottom: row-inset.at("y", default: 6pt)),
+        fill: (x, y, _) => {
+          if y == 0 { white }
+          else if calc.rem(y, 2) == 1 { stripe } else { white }
+        },
+      )
+      set text(size: body-size)
+      show table.cell.where(y: 0): set table.cell(
+        inset: (left: header-inset.at("x", default: 4pt), right: header-inset.at("x", default: 4pt), top: header-inset.at("y", default: 2pt), bottom: header-inset.at("y", default: 2pt)),
+      )
+      show table.cell.where(y: 0): set text(weight: header-weight)
+      it
+    }
+  }
 
   set bibliography(title: text(10pt, "References"), style: "ieee")
   show bibliography: (it) => {
