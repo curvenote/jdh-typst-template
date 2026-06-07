@@ -135,7 +135,7 @@
       max-columns: 6,
       header-inset: (x: 5pt, y: 5pt),
       row-inset: (x: 4pt, y: 6pt),
-      shell-inset: 2pt,
+      shell-inset: (x: 2pt, y: 2pt),
       stripe-fill: rgb("#E8E8E8"),
       border: rgb("#BFBFBF"),
       border-width: 0.5pt,
@@ -233,6 +233,7 @@
   let cell-align = left + horizon
   let footer-y = if hidden-rows > 0 { header-rows + data-rows } else { -1 }
   (
+    inset: 0pt,
     auto-vlines: false,
     align: cell-align,
     map-hlines: line => {
@@ -294,10 +295,12 @@
 /// Gray border + slight inset around the whole table (including summary row).
 #let jdh-table-shell(body) = {
   let tb = jdh-theme.table
+  let shell-inset = tb.at("shell-inset", default: (x: 2pt, y: 2pt))
+  let inset = if type(shell-inset) == dictionary { shell-inset } else { (x: shell-inset, y: shell-inset) }
   block(
     width: 100%,
     stroke: tb.at("border-width", default: 0.5pt) + tb.at("border", default: gray),
-    inset: tb.at("shell-inset", default: 2pt),
+    inset: inset,
   )[
     #body
   ]
