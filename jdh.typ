@@ -133,7 +133,7 @@
     table: (
       max-rows: 4,
       max-columns: 6,
-      header-inset: (x: 4pt, y: 2pt),
+      header-inset: (x: 5pt, y: 5pt),
       row-inset: (x: 4pt, y: 6pt),
       shell-inset: 2pt,
       stripe-fill: rgb("#E8E8E8"),
@@ -226,12 +226,15 @@
   let stripe = tb.at("stripe-fill", default: rgb("#E8E8E8"))
   let body-size = tb.at("body-size", default: 8pt)
   let header-weight = tb.at("header-weight", default: 700)
-  let header-inset-y = tb.at("header-inset", default: (y: 2pt)).at("y", default: 2pt)
+  let header-inset-x = tb.at("header-inset", default: (x: 5pt)).at("x", default: 5pt)
+  let header-inset-y = tb.at("header-inset", default: (y: 5pt)).at("y", default: 5pt)
   let row-inset-x = tb.at("row-inset", default: (x: 4pt)).at("x", default: 4pt)
   let row-inset-y = tb.at("row-inset", default: (y: 6pt)).at("y", default: 6pt)
+  let cell-align = left + horizon
   let footer-y = if hidden-rows > 0 { header-rows + data-rows } else { -1 }
   (
     auto-vlines: false,
+    align: cell-align,
     map-hlines: line => {
       if line.y == header-rows {
         line.stroke = tb.at("border-width", default: 0.5pt) + tb.at("border", default: gray)
@@ -254,7 +257,7 @@
         white
       }
       let inset = if is-header {
-        (x: row-inset-x, y: header-inset-y)
+        (x: header-inset-x, y: header-inset-y)
       } else {
         (x: row-inset-x, y: row-inset-y)
       }
@@ -263,7 +266,7 @@
       } else {
         text(cell.content, body-size)
       }
-      (..cell, fill: fill, inset: inset, content: content)
+      (..cell, fill: fill, inset: inset, align: cell-align, content: content)
     },
   )
 }
@@ -278,12 +281,12 @@
   cellx(
     colspan: columns,
     fill: stripe,
+    align: center + horizon,
     inset: (
       x: row-inset.at("x", default: 4pt),
       y: row-inset.at("y", default: 6pt),
     ),
   )[
-    #set align(center)
     #text(size: more-size, weight: more-weight)[#hidden rows more]
   ]
 }
