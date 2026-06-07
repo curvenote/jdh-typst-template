@@ -251,6 +251,11 @@
   let fill = nc.at("fill", default: nc-def.at("fill"))
   let inset = nc.at("inset", default: nc-def.at("inset"))
   let right-outset = nc.at("right-outset", default: nc-def.at("right-outset"))
+  let left-inset = if type(inset) == dictionary {
+    inset.at("left", default: 0pt)
+  } else {
+    inset
+  }
   block(
     breakable: true,
     spacing: 1em,
@@ -259,7 +264,9 @@
     outset: (right: right-outset),
   )[
     #in-narrative-code-block.update(true)
+    #paragraph-number-left-offset.update(left-inset)
     #body
+    #paragraph-number-left-offset.update(0pt)
     #in-narrative-code-block.update(false)
   ]
 }
@@ -800,6 +807,16 @@
             #hermeneutics-code-marker([END], kind: "end", dy: marker.at("end-dy", default: marker-def.at("end-dy")))
             #p-skip.update(false)
           ]
+        } else if in-narrative-code-block.get() {
+          // Number the code block once at the first line (body-sized column), and
+          // suppress the show-par rule inside code / truncation footer paragraphs.
+          [
+            #p-display
+            #p-step
+            #p-skip.update(true)
+            #code-body
+            #p-skip.update(false)
+          ]
         } else {
           code-body
         }
@@ -820,8 +837,8 @@
   // (Counter and `p-display` are defined near the top of the function so
   // the heading show rule can reuse them.) Headings handle the number
   // injection themselves inside their block; here we cover paragraphs
-  // (display before, step inside, with a recursion guard) and code
-  // blocks (which intentionally do not affect paragraph numbering).
+  // blocks (narrative code gets an explicit number at the first line; other
+  // raw code does not participate).
   show par: it => context {
     // Skip numbering for paragraphs inside headings (handled directly
     // by the heading show rule) and for our own recursive wrap.
