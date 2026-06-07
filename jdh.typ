@@ -940,14 +940,18 @@
         }
       })
   }
+  // JDH style: table captions below the table (Typst defaults auto-detected tables to top).
+  let jdh-table-figure(it) = {
+    set figure.caption(position: bottom)
+    [
+      #p-skip.update(true)
+      #it
+      #p-skip.update(false)
+    ]
+  }
+  show figure.where(kind: table): jdh-table-figure
+  show figure.where(kind: "table"): jdh-table-figure
   show figure.caption: leftCaption
-  show figure.where(kind: "table"): set figure.caption(position: bottom)
-  // Tables are block floats, not prose: skip paragraph numbers for body and caption.
-  show figure.where(kind: "table"): it => [
-    #p-skip.update(true)
-    #it
-    #p-skip.update(false)
-  ]
   set figure(placement: auto)
 
   // Hand-authored native Typst tables (not pipeline tablex) may still use show table.
