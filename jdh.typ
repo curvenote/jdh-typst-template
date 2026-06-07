@@ -3,6 +3,13 @@
 
 #let venueLogo = "logo-text.svg";
 
+// Shared geometry for full-bleed colored blocks (hermeneutics + narrative code).
+#let callout-block = (
+  inset: (left: 2.5em, right: 14pt, top: 18pt, bottom: 18pt),
+  right-outset: 100%,
+  spacing: 1em,
+)
+
 #let jdh-theme = (
     color: black,
     font: "Libertinus Serif",
@@ -81,15 +88,12 @@
       // of the body text size.
       inline-baseline: -0.64em,
     ),
-    // Hermeneutics blocks (`:::{hermeneutics}`): fill and insets are tunable here.
-    hermeneutics: (
+    // Full-bleed callout geometry (shared by hermeneutics and narrative-code).
+    callout-block: callout-block,
+    // Hermeneutics blocks (`:::{hermeneutics}`): fill only; geometry from callout-block.
+    hermeneutics: callout-block + (
       // Background — saturated aqua/cyan (tweak hex to match JDH target PDF).
       fill: rgb("#D3FFF6"),
-      // Inset inside the colored block (large left pad vs body; generous vertical pad).
-      inset: (left: 2.5em, right: 14pt, top: 18pt, bottom: 18pt),
-      // Deliberately over-extend to the right; the page clips it at the edge.
-      // This is more robust than trying to resolve Typst's automatic right margin.
-      right-outset: 100%,
       code-marker: (
         // Position the marker in the left sidebar column, not in the paragraph
         // number gutter. Coordinates are relative to the padded code content.
@@ -110,12 +114,9 @@
         text-line-height: 6pt,
       ),
     ),
-    // Narrative code blocks (main-flow code cells, not hermeneutics commentary).
-    // Left/top inset matches hermeneutics so code aligns with commentary blocks.
-    narrative-code: (
+    // Narrative code blocks: fill only; geometry from callout-block.
+    narrative-code: callout-block + (
       fill: rgb("#E8E8E8"),
-      inset: (left: 2.5em, right: 14pt, top: 18pt, bottom: 18pt),
-      right-outset: 100%,
     ),
 )
 
@@ -221,6 +222,7 @@
   let fill = hm.at("fill", default: hm-def.at("fill"))
   let inset = hm.at("inset", default: hm-def.at("inset"))
   let right-outset = hm.at("right-outset", default: hm-def.at("right-outset"))
+  let block-spacing = hm.at("spacing", default: hm-def.at("spacing", default: 1em))
   let left-inset = if type(inset) == dictionary {
     inset.at("left", default: 0pt)
   } else {
@@ -228,7 +230,7 @@
   }
   block(
     breakable: true,
-    spacing: 1em,
+    spacing: block-spacing,
     fill: fill,
     inset: inset,
     outset: (right: right-outset),
@@ -251,6 +253,7 @@
   let fill = nc.at("fill", default: nc-def.at("fill"))
   let inset = nc.at("inset", default: nc-def.at("inset"))
   let right-outset = nc.at("right-outset", default: nc-def.at("right-outset"))
+  let block-spacing = nc.at("spacing", default: nc-def.at("spacing", default: 1em))
   let left-inset = if type(inset) == dictionary {
     inset.at("left", default: 0pt)
   } else {
@@ -258,7 +261,7 @@
   }
   block(
     breakable: true,
-    spacing: 1em,
+    spacing: block-spacing,
     fill: fill,
     inset: inset,
     outset: (right: right-outset),
