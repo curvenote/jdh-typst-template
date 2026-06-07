@@ -887,6 +887,12 @@
   }
   show figure.caption: leftCaption
   show figure.where(kind: "table"): set figure.caption(position: bottom)
+  // Tables are block floats, not prose: skip paragraph numbers for body and caption.
+  show figure.where(kind: "table"): it => [
+    #p-skip.update(true)
+    #it
+    #p-skip.update(false)
+  ]
   set figure(placement: auto)
 
   // JDH table styling (between `#jdh-table-enter` and `#jdh-table-footer`).
@@ -941,7 +947,7 @@
     // Skip numbering for paragraphs inside headings (handled directly
     // by the heading show rule) and for our own recursive wrap.
     let first-child = it.body.at("children", default: ()).at(0, default: none)
-    if p-skip.get() {
+    if p-skip.get() or in-jdh-table-block.get() {
       it
     } else if first-child == p-display-inline or first-child == p-step {
       it
