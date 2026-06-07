@@ -117,6 +117,8 @@
     // Narrative code blocks: fill only; geometry from callout-block.
     narrative-code: callout-block + (
       fill: rgb("#E8E8E8"),
+      // Extra vertical shift for the block-level paragraph number (negative = up).
+      paragraph-number-dy: -3pt,
     ),
 )
 
@@ -363,10 +365,17 @@
   // not line up.
   let p-display = context {
     let left-offset = paragraph-number-left-offset.get()
+    let dy-extra = 0pt
+    if in-narrative-code-block.get() {
+      let th = state("THEME").get()
+      let merged = if th == none { jdh-theme } else { th }
+      let nc = merged.at("narrative-code", default: jdh-theme.narrative-code)
+      dy-extra = nc.at("paragraph-number-dy", default: -3pt)
+    }
     text(size: theme.body-size, place(
       left,
       dx: -pnum-theme.margin - left-offset,
-      dy: pnum-theme.at("baseline", default: 0pt),
+      dy: pnum-theme.at("baseline", default: 0pt) + dy-extra,
       box(
         width: pnum-theme.width,
         align(right + top, text(
