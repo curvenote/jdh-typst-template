@@ -111,9 +111,10 @@
       ),
     ),
     // Narrative code blocks (main-flow code cells, not hermeneutics commentary).
+    // Left/top inset matches hermeneutics so code aligns with commentary blocks.
     narrative-code: (
       fill: rgb("#E8E8E8"),
-      inset: (left: 0pt, right: 14pt, top: 12pt, bottom: 12pt),
+      inset: (left: 2.5em, right: 14pt, top: 18pt, bottom: 18pt),
       right-outset: 100%,
     ),
 )
