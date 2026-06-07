@@ -367,6 +367,7 @@
       box(
         width: pnum-theme.width,
         align(right + top, text(
+          font: theme.font,
           size: pnum-theme.size,
           weight: pnum-theme.weight,
           style: pnum-theme.style,
@@ -394,6 +395,7 @@
       box(
         width: pnum-theme.width,
         align(right + top, text(
+          font: theme.font,
           size: pnum-theme.size,
           weight: pnum-theme.weight,
           style: pnum-theme.style,
