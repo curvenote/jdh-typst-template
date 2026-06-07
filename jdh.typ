@@ -3,9 +3,12 @@
 
 #let venueLogo = "logo-text.svg";
 
+// Horizontal alignment between body text, paragraph numbers, and callout content.
+#let body-gutter = 2.5em
+
 // Shared geometry for full-bleed colored blocks (hermeneutics + narrative code).
 #let callout-block = (
-  inset: (left: 2.5em, right: 14pt, top: 18pt, bottom: 18pt),
+  inset: (left: body-gutter, right: 14pt, top: 18pt, bottom: 18pt),
   right-outset: 100%,
   spacing: 1em,
 )
@@ -54,6 +57,8 @@
     // which leaves `page.margin.right` as `auto` and prevents exact bleed maths).
     // Tune with the body column if needed; typical default is ~11% of page width.
     page-margin-right: 11.2%,
+    // Shared horizontal inset for body text, paragraph numbers, and callouts.
+    body-gutter: body-gutter,
     // Heading typography from JDH Figma tokens (px converted to pt at 96dpi).
     // 10px -> 7.5pt, 12px -> 9pt, 14px -> 10.5pt, 20px line-height -> 15pt.
     heading: (
@@ -70,7 +75,8 @@
       fill: gray.darken(20%),
       // Horizontal offset of the number column's left edge from the body
       // text column's left edge (negative = into the left margin).
-      margin: 2.5em,
+      // Defaults to `body-gutter`; callout `inset.left` uses the same token.
+      margin: body-gutter,
       // Width of the number column; the digits are right-aligned in it,
       // so the right edge sits `margin - width` to the left of the body.
       width: 2em,
@@ -221,12 +227,13 @@
   let theme = if th == none { jdh-theme } else { th }
   let hm-def = jdh-theme.at("hermeneutics")
   let hm = theme.at("hermeneutics", default: hm-def)
+  let body-gutter = theme.at("body-gutter", default: jdh-theme.body-gutter)
   let fill = hm.at("fill", default: hm-def.at("fill"))
   let inset = hm.at("inset", default: hm-def.at("inset"))
   let right-outset = hm.at("right-outset", default: hm-def.at("right-outset"))
   let block-spacing = hm.at("spacing", default: hm-def.at("spacing", default: 1em))
   let left-inset = if type(inset) == dictionary {
-    inset.at("left", default: 0pt)
+    inset.at("left", default: body-gutter)
   } else {
     inset
   }
@@ -252,12 +259,13 @@
   let theme = if th == none { jdh-theme } else { th }
   let nc-def = jdh-theme.at("narrative-code")
   let nc = theme.at("narrative-code", default: nc-def)
+  let body-gutter = theme.at("body-gutter", default: jdh-theme.body-gutter)
   let fill = nc.at("fill", default: nc-def.at("fill"))
   let inset = nc.at("inset", default: nc-def.at("inset"))
   let right-outset = nc.at("right-outset", default: nc-def.at("right-outset"))
   let block-spacing = nc.at("spacing", default: nc-def.at("spacing", default: 1em))
   let left-inset = if type(inset) == dictionary {
-    inset.at("left", default: 0pt)
+    inset.at("left", default: body-gutter)
   } else {
     inset
   }
@@ -328,16 +336,18 @@
   // Bundled paths are listed in font-paths.txt; use scripts/compile-with-fonts.sh TEMPLATE_ROOT input.typ [output].
   let theme = jdh-theme
   let heading-theme = theme.heading
+  let body-gutter = theme.at("body-gutter", default: jdh-theme.body-gutter)
   let pnum-theme = theme.at("paragraph-number", default: (
     size: 9pt,
     weight: "regular",
     style: "normal",
     fill: gray.darken(20%),
-    margin: 3em,
+    margin: body-gutter,
     width: 2em,
     baseline: 0.1em,
     inline-baseline: -0.75em,
   ))
+  let pnum-margin = pnum-theme.at("margin", default: body-gutter)
 
   // --- Paragraph numbering helpers ---
   // Numbers each top-level block (paragraphs, headings) sequentially in
@@ -374,7 +384,7 @@
     }
     text(size: theme.body-size, place(
       left,
-      dx: -pnum-theme.margin - left-offset,
+      dx: -pnum-margin - left-offset,
       dy: pnum-theme.at("baseline", default: 0pt) + dy-extra,
       box(
         width: pnum-theme.width,
@@ -402,7 +412,7 @@
     let left-offset = paragraph-number-left-offset.get()
     text(size: theme.body-size, box(width: 0pt, height: 0pt, place(
       left,
-      dx: -pnum-theme.margin - left-offset,
+      dx: -pnum-margin - left-offset,
       dy: pnum-theme.at("inline-baseline", default: -0.75em),
       box(
         width: pnum-theme.width,
