@@ -135,8 +135,9 @@
       max-columns: 6,
       header-inset: (x: 4pt, y: 2pt),
       row-inset: (x: 4pt, y: 6pt),
+      shell-inset: 2pt,
       stripe-fill: rgb("#E8E8E8"),
-      border: white,
+      border: rgb("#BFBFBF"),
       border-width: 0.5pt,
       header-weight: 700,
       body-size: 8pt,
@@ -218,10 +219,9 @@
 #let in-hermeneutics-block = state("jdh-in-hermeneutics-block", false)
 #let in-narrative-code-block = state("jdh-in-narrative-code-block", false)
 #let in-jdh-table-block = state("jdh-in-jdh-table-block", false)
-#let jdh-table-hidden-rows = state("jdh-table-hidden-rows", 0)
 
 /// tablex style dictionary for JDH pipeline tables (zebra rows, no gridlines).
-#let jdh-table-style(header-rows: 1) = {
+#let jdh-table-style(header-rows: 1, hidden-rows: 0, data-rows: 0) = {
   let tb = jdh-theme.table
   let stripe = tb.at("stripe-fill", default: rgb("#E8E8E8"))
   let body-size = tb.at("body-size", default: 8pt)
@@ -229,17 +229,22 @@
   let header-inset-y = tb.at("header-inset", default: (y: 2pt)).at("y", default: 2pt)
   let row-inset-x = tb.at("row-inset", default: (x: 4pt)).at("x", default: 4pt)
   let row-inset-y = tb.at("row-inset", default: (y: 6pt)).at("y", default: 6pt)
+  let footer-y = if hidden-rows > 0 { header-rows + data-rows } else { -1 }
   (
     auto-vlines: false,
     map-hlines: line => {
       if line.y == header-rows {
-        line.stroke = 0.5pt + gray
+        line.stroke = tb.at("border-width", default: 0.5pt) + tb.at("border", default: gray)
       } else {
         line.stroke = 0pt
       }
       line
     },
     map-cells: cell => {
+      // “K rows more” row is emitted as a pre-styled cellx cell by the plugin.
+      if hidden-rows > 0 and cell.y == footer-y {
+        return cell
+      }
       let is-header = cell.y < header-rows
       let fill = if is-header {
         white
@@ -263,60 +268,46 @@
   )
 }
 
-/// Bordered shell for the table body (pairs with `#jdh-table-footer()`).
-#let jdh-table-body(body) = {
+/// Full-width colspan cell for the “K rows more” summary row (last tablex row).
+#let jdh-table-more-cell(columns, hidden) = {
   let tb = jdh-theme.table
-  let border = tb.at("border", default: white)
-  let border-width = tb.at("border-width", default: 0.5pt)
+  let stripe = tb.at("stripe-fill", default: rgb("#E8E8E8"))
+  let row-inset = tb.at("row-inset", default: (x: 4pt, y: 6pt))
+  let more-size = tb.at("more-text-size", default: 8pt)
+  let more-weight = tb.at("more-weight", default: 700)
+  cellx(
+    colspan: columns,
+    fill: stripe,
+    inset: (
+      x: row-inset.at("x", default: 4pt),
+      y: row-inset.at("y", default: 6pt),
+    ),
+  )[
+    #set align(center)
+    #text(size: more-size, weight: more-weight)[#hidden rows more]
+  ]
+}
+
+/// Gray border + slight inset around the whole table (including summary row).
+#let jdh-table-shell(body) = {
+  let tb = jdh-theme.table
   block(
     width: 100%,
-    stroke: (left: border-width + border, right: border-width + border, top: border-width + border),
-    inset: 0pt,
+    stroke: tb.at("border-width", default: 0.5pt) + tb.at("border", default: gray),
+    inset: tb.at("shell-inset", default: 2pt),
   )[
     #body
   ]
 }
 
-/// Mark start of a JDH table (sets styling state). Pair with `#jdh-table-footer()`.
+/// Mark start of a JDH table (sets styling state for paragraph numbering).
 #let jdh-table-enter(hidden-rows: 0, hidden-cols: 0) = {
-  jdh-table-hidden-rows.update(hidden-rows)
   in-jdh-table-block.update(true)
 }
 
-/// Footer row (“K rows more”) and end of JDH table styling scope.
-#let jdh-table-footer() = context {
-  let th = state("THEME").get()
-  let theme = if th == none { jdh-theme } else { th }
-  let tb-def = jdh-theme.at("table")
-  let tb = theme.at("table", default: tb-def)
-  let stripe = tb.at("stripe-fill", default: tb-def.at("stripe-fill"))
-  let row-inset = tb.at("row-inset", default: tb-def.at("row-inset"))
-  let more-size = tb.at("more-text-size", default: tb-def.at("more-text-size"))
-  let more-weight = tb.at("more-weight", default: tb-def.at("more-weight"))
-  let border = tb.at("border", default: tb-def.at("border"))
-  let border-width = tb.at("border-width", default: tb-def.at("border-width"))
-  let hidden = jdh-table-hidden-rows.get()
+/// End of JDH table styling scope (summary row is inside tablex, not a separate block).
+#let jdh-table-leave() = {
   in-jdh-table-block.update(false)
-  block(
-    width: 100%,
-    stroke: (
-      left: border-width + border,
-      right: border-width + border,
-      bottom: border-width + border,
-    ),
-    inset: 0pt,
-  )[
-    #if hidden > 0 {
-      block(
-        width: 100%,
-        fill: stripe,
-        inset: (left: row-inset.at("x", default: 4pt), right: row-inset.at("x", default: 4pt), top: row-inset.at("y", default: 6pt), bottom: row-inset.at("y", default: 6pt)),
-      )[
-        #set text(size: more-size, weight: more-weight)
-        #align(center)[#hidden rows more]
-      ]
-    }
-  ]
 }
 
 /// Hermeneutics blocks (methodological commentary) from `:::{hermeneutics}` in MyST.
