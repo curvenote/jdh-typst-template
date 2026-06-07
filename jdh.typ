@@ -200,7 +200,9 @@
 }
 
 #let leftCaption(it) = context {
-  set text(size: 8pt)
+  let th = state("THEME").get()
+  let theme = if th == none { jdh-theme } else { th }
+  set text(size: theme.body-size)
   set align(left)
   set par(justify: true)
   text(weight: "bold")[#it.supplement #it.counter.display(it.numbering)]
