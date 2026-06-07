@@ -220,6 +220,63 @@
 #let in-jdh-table-block = state("jdh-in-jdh-table-block", false)
 #let jdh-table-hidden-rows = state("jdh-table-hidden-rows", 0)
 
+/// tablex style dictionary for JDH pipeline tables (zebra rows, no gridlines).
+#let jdh-table-style(header-rows: 1) = {
+  let tb = jdh-theme.table
+  let stripe = tb.at("stripe-fill", default: rgb("#E8E8E8"))
+  let body-size = tb.at("body-size", default: 8pt)
+  let header-weight = tb.at("header-weight", default: 700)
+  let header-inset-y = tb.at("header-inset", default: (y: 2pt)).at("y", default: 2pt)
+  let row-inset-x = tb.at("row-inset", default: (x: 4pt)).at("x", default: 4pt)
+  let row-inset-y = tb.at("row-inset", default: (y: 6pt)).at("y", default: 6pt)
+  (
+    auto-vlines: false,
+    map-hlines: line => {
+      if line.y == header-rows {
+        line.stroke = 0.5pt + gray
+      } else {
+        line.stroke = 0pt
+      }
+      line
+    },
+    map-cells: cell => {
+      let is-header = cell.y < header-rows
+      let fill = if is-header {
+        white
+      } else if calc.rem(cell.y - header-rows, 2) == 0 {
+        stripe
+      } else {
+        white
+      }
+      let inset = if is-header {
+        (x: row-inset-x, y: header-inset-y)
+      } else {
+        (x: row-inset-x, y: row-inset-y)
+      }
+      let content = if is-header {
+        strong(text(cell.content, body-size, weight: header-weight))
+      } else {
+        text(cell.content, body-size)
+      }
+      (..cell, fill: fill, inset: inset, content: content)
+    },
+  )
+}
+
+/// Bordered shell for the table body (pairs with `#jdh-table-footer()`).
+#let jdh-table-body(body) = {
+  let tb = jdh-theme.table
+  let border = tb.at("border", default: white)
+  let border-width = tb.at("border-width", default: 0.5pt)
+  block(
+    width: 100%,
+    stroke: (left: border-width + border, right: border-width + border, top: border-width + border),
+    inset: 0pt,
+  )[
+    #body
+  ]
+}
+
 /// Mark start of a JDH table (sets styling state). Pair with `#jdh-table-footer()`.
 #let jdh-table-enter(hidden-rows: 0, hidden-cols: 0) = {
   jdh-table-hidden-rows.update(hidden-rows)
@@ -242,7 +299,11 @@
   in-jdh-table-block.update(false)
   block(
     width: 100%,
-    stroke: border-width + border,
+    stroke: (
+      left: border-width + border,
+      right: border-width + border,
+      bottom: border-width + border,
+    ),
     inset: 0pt,
   )[
     #if hidden > 0 {
@@ -895,40 +956,7 @@
   ]
   set figure(placement: auto)
 
-  // JDH table styling (between `#jdh-table-enter` and `#jdh-table-footer`).
-  show table: it => context {
-    if not in-jdh-table-block.get() {
-      it
-    } else {
-      let th = state("THEME").get()
-      let theme = if th == none { jdh-theme } else { th }
-      let tb-def = jdh-theme.at("table")
-      let tb = theme.at("table", default: tb-def)
-      let stripe = tb.at("stripe-fill", default: tb-def.at("stripe-fill"))
-      let header-inset = tb.at("header-inset", default: tb-def.at("header-inset"))
-      let row-inset = tb.at("row-inset", default: tb-def.at("row-inset"))
-      let header-weight = tb.at("header-weight", default: tb-def.at("header-weight"))
-      let body-size = tb.at("body-size", default: tb-def.at("body-size"))
-      let border = tb.at("border", default: tb-def.at("border"))
-      let border-width = tb.at("border-width", default: tb-def.at("border-width"))
-      block(width: 100%, stroke: border-width + border, inset: 0pt)[
-        #set table(
-          stroke: none,
-          inset: (left: row-inset.at("x", default: 4pt), right: row-inset.at("x", default: 4pt), top: row-inset.at("y", default: 6pt), bottom: row-inset.at("y", default: 6pt)),
-          fill: (x, y, _) => {
-            if y == 0 { white }
-            else if calc.rem(y, 2) == 1 { stripe } else { white }
-          },
-        )
-        #set text(size: body-size)
-        #show table.cell.where(y: 0): set table.cell(
-          inset: (left: header-inset.at("x", default: 4pt), right: header-inset.at("x", default: 4pt), top: header-inset.at("y", default: 2pt), bottom: header-inset.at("y", default: 2pt)),
-        )
-        #show table.cell.where(y: 0): set text(weight: header-weight)
-        #it
-      ]
-    }
-  }
+  // Hand-authored native Typst tables (not pipeline tablex) may still use show table.
 
   set bibliography(title: text(10pt, "References"), style: "ieee")
   show bibliography: (it) => {
