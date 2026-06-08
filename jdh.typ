@@ -923,7 +923,10 @@
         if in-hermeneutics-block.get() {
           let marker-def = hm-def.at("code-marker")
           let marker = hm.at("code-marker", default: marker-def)
+          // Step the counter but hide the margin number; p-skip suppresses
+          // internal paragraphs (code lines, "N lines more" footer).
           [
+            #p-step
             #p-skip.update(true)
             #hermeneutics-code-marker([HERMENEUTICS\ CODE EXCERPT], kind: "start", dy: marker.at("start-dy", default: marker-def.at("start-dy")))
             #code-body
