@@ -961,9 +961,11 @@
 
   // Hand-authored native Typst tables (not pipeline tablex) may still use show table.
 
-  set bibliography(title: text(10pt, "References"), style: "ieee")
-  show bibliography: (it) => {
-    set text(7pt)
+  set bibliography(title: text(theme.body-size, "References"), style: "ieee")
+  show bibliography: it => context {
+    let th = state("THEME").get()
+    let merged = if th == none { jdh-theme } else { th }
+    set text(size: merged.at("body-size", default: jdh-theme.body-size))
     set block(spacing: 0.9em)
     it
   }
