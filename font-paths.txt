@@ -1,5 +1,5 @@
 # Bundled font directories (relative to template root).
-# Used by scripts/compile-with-fonts.sh so typst finds bundled fonts.
+# Pass each as --font-path to typst compile so bundled fonts are found.
 fonts/libertinus_serif
 fonts/fira_sans
 fonts/fira_code

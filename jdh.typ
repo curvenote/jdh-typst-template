@@ -432,7 +432,7 @@
   // Set document metadata.
   set document(title: fm.title, author: fm.authors.map(author => author.name))
   // Font resolution: Typst looks up font names in --font-path dirs, then system fonts.
-  // Bundled paths are listed in font-paths.txt; use scripts/compile-with-fonts.sh TEMPLATE_ROOT input.typ [output].
+  // Bundled paths are listed in font-paths.txt (see README).
   let theme = jdh-theme
   let heading-theme = theme.heading
   let body-gutter = theme.at("body-gutter", default: jdh-theme.body-gutter)
