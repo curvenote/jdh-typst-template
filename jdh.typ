@@ -238,17 +238,33 @@
   }
 }
 
+/// Figure, table, dialogue, sound and video captions (JDH guideline mockup p6–p13):
+/// the label ("Figure 2") in bold in the left margin, where paragraph numbers
+/// sit (outside a hermeneutics block's fill); the caption text upright in the
+/// column, with no full stop after the number. A caption gets no paragraph
+/// number of its own.
 #let leftCaption(it) = context {
   let th = state("THEME").get()
   let theme = if th == none { jdh-theme } else { th }
+  let pn = jdh-theme.paragraph-number + theme.at("paragraph-number", default: (:))
+  let pn-margin = pn.at("margin", default: body-gutter)
+  let pn-width = pn.at("width", default: 2em)
+  // (Defined before the state variables below, so look the state up by key.)
+  let left-offset = state("jdh-paragraph-number-left-offset", 0pt).get()
+  let label-width = 8em
   set text(size: theme.body-size)
   set align(left)
   set par(justify: true)
-  text(weight: "bold")[#it.supplement #it.counter.display(it.numbering)]
-  "."
-  h(4pt)
-  set text(fill: black.lighten(20%), style: "italic")
+  state("jdh-p-skip").update(true)
+  // Right edge of the label lines up with the right edge of paragraph numbers.
+  box(width: 0pt, height: 0pt, place(
+    left,
+    dx: -pn-margin - left-offset - (label-width - pn-width),
+    dy: pn.at("inline-baseline", default: -0.75em),
+    box(width: label-width, align(right + top, text(weight: "bold")[#it.supplement #it.counter.display(it.numbering)])),
+  ))
   it.body
+  state("jdh-p-skip").update(false)
 }
 
 #let fullwidth(it) = {
