@@ -319,6 +319,45 @@
   in-jdh-table-block.update(false)
 }
 
+/// Dialogue (JDH `dialog-*` cells, emitted by jdh-cli's jdh-dialogue plugin).
+/// Speaker names head the columns; each turn is a bubble in its speaker's
+/// column, in order. `rows` holds one entry per speaker per row (`none` when
+/// that speaker is silent); the last speaker's bubbles align right.
+#let jdh-dialogue(speakers: (), rows: ()) = context {
+  let th = state("THEME").get()
+  let theme = if th == none { jdh-theme } else { th }
+  let n = calc.max(1, speakers.len())
+  let bubble(body, at-right) = align(
+    if at-right { right } else { left },
+    box(
+      fill: white,
+      stroke: 0.5pt + gray.lighten(30%),
+      radius: 4pt,
+      inset: (x: 8pt, y: 6pt),
+      align(left, text(size: theme.body-size, body)),
+    ),
+  )
+  // No margin paragraph numbers inside the dialogue (same flag as tables).
+  in-jdh-table-block.update(true)
+  block(width: 100%, breakable: true, {
+    set par(justify: false, first-line-indent: 0pt)
+    set align(left)
+    grid(
+      columns: (1fr,) * n,
+      column-gutter: 16pt,
+      row-gutter: 8pt,
+      ..speakers.map(s => pad(bottom: 2pt, text(size: theme.body-size, weight: "bold", s))),
+      ..rows
+        .map(r => range(n).map(i => {
+          let c = r.at(i, default: none)
+          if c == none { [] } else { bubble(c, n > 1 and i == n - 1) }
+        }))
+        .flatten(),
+    )
+  })
+  in-jdh-table-block.update(false)
+}
+
 /// Hermeneutics blocks (methodological commentary) from `:::{hermeneutics}` in MyST.
 /// Fill/padding come from `jdh-theme.hermeneutics` via `state("THEME")` (merged in `template`).
 /// Right bleed intentionally over-extends; the page clips the fill at the physical edge.
@@ -962,6 +1001,9 @@
   show figure.where(kind: "table"): jdh-table-figure
   show figure.caption: leftCaption
   set figure(placement: auto)
+  // Dialogues can be longer than a page: keep them in the text flow so they
+  // break between turns (a floating figure can't break).
+  show figure.where(kind: "dialogue"): set figure(placement: none)
 
   // Hand-authored native Typst tables (not pipeline tablex) may still use show table.
 
