@@ -43,7 +43,7 @@ Required frontmatter: `title`, `authors`. Also read when present: `subtitle`, `s
 
 The blocks are emitted by jdh-cli's MyST plugins as raw Typst.
 
-`pubmatter.typ` is a local development copy of [pubmatter](https://github.com/continuous-foundation/pubmatter), imported in place of the published `@preview/pubmatter` package.
+Front matter uses the published [pubmatter](https://github.com/continuous-foundation/pubmatter) package (`@preview/pubmatter:0.2.2`). The JDH title block (title font and size from the theme, boxed author cards with affiliations and ORCID) is in `jdh-frontmatter.typ`, built on pubmatter's public functions.
 
 ## Fonts
 

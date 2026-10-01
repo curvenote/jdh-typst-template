@@ -1,5 +1,6 @@
-// Use local pubmatter (development). For the published package, use: #import "@preview/pubmatter:0.2.2"
-#import "./pubmatter.typ"
+#import "@preview/pubmatter:0.2.2"
+// JDH title block (title, boxed author cards) on top of published pubmatter.
+#import "./jdh-frontmatter.typ"
 #import "@preview/tablex:0.0.9": tablex, cellx, hlinex, vlinex
 #let tableStyle = (:)
 #let columnStyle = (:)
@@ -672,7 +673,7 @@
 
 
   // Title and subtitle
-  pubmatter.show-title-block(fm)
+  jdh-frontmatter.show-title-block(fm)
 
   // Render abstract section directly under authors when present:
   // title -> keyword badges -> abstract body (italic).
