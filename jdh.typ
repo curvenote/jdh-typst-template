@@ -57,10 +57,28 @@
       more-text-weight: 400,
       more-text-bottom-inset: -4pt,
     ),
+    // Page geometry, measured from JDH's guideline mockup (A4, Dec 2025):
+    // text column 25%–92% of the page width, first line ~37pt from the top,
+    // body ends ~59pt above the bottom, footer rule 48pt from the bottom.
     // Explicit right margin (Typst defaults the right side when only `left` is set,
     // which leaves `page.margin.right` as `auto` and prevents exact bleed maths).
-    // Tune with the body column if needed; typical default is ~11% of page width.
-    page-margin-right: 11.2%,
+    page-margin-right: 8%,
+    page-margin-top: 1.45cm,
+    page-margin-bottom: 2.1cm,
+    // How far the footer (rule + page number) is lowered into the bottom margin:
+    // margin 59.5pt − 11.5pt puts the rule 48pt from the page bottom.
+    footer-descent: 11.5pt,
+    // Title page, relative to the top of the body area: the title starts ~68pt
+    // from the page top, the logo ~33pt and the fingerprint ~67pt (mockup p1).
+    title-page-offset: 26.75pt,
+    logo-dy: -8.25pt,
+    fingerprint-dy: 25.75pt,
+    // Left sidebar column (logo, fingerprint, publication details) starts ~22pt
+    // from the page edge, as a fraction of the text column width.
+    sidebar-dx: -31.6%,
+    // Sidebar (publication, licence, QR) relative to the bottom of the body area:
+    // its last line sits level with the footer rule.
+    sidebar-dy: 11.5pt,
     // Shared horizontal inset for body text, paragraph numbers, and callouts.
     body-gutter: body-gutter,
     // Heading typography from JDH Figma tokens (px converted to pt at 96dpi).
@@ -427,7 +445,7 @@
   frontmatter: (),
   heading-numbering: none,
   kind: none,
-  paper-size: "us-letter",
+  paper-size: "a4",
   // The path to a bibliography file if you want to cite some external works.
   page-start: none,
   max-page: none,
@@ -571,12 +589,13 @@
   state("THEME").update(theme)
   set page(
     paper: paper-size,
-    margin: (left: 25%, right: theme.page-margin-right),
+    margin: (left: 25%, right: theme.page-margin-right, top: theme.page-margin-top, bottom: theme.page-margin-bottom),
+    footer-descent: theme.footer-descent,
     header: none,
     footer: block(
       width: 100%,
       stroke: (top: 1pt + gray),
-      inset: (top: 8pt, right: 2pt),
+      inset: (top: 12pt, right: 0pt),
         context [
         #set text(font: theme.font, size: theme.body-size, fill: gray.darken(50%))
         #pubmatter.show-spaced-content((
@@ -695,8 +714,8 @@
   if (logo != none) {
     place(
       top,
-      dx: -33%,
-      dy: -40pt,
+      dx: theme.sidebar-dx,
+      dy: theme.logo-dy,
       float: false,
       box(width: 70pt, logo),
     )
@@ -704,14 +723,16 @@
   if (fingerprint != none) {
     place(
       top,
-      dx: -33%,
+      dx: theme.sidebar-dx,
+      dy: theme.fingerprint-dy,
       float: false,
       box(width: 27%, fingerprint),
     )
   }
 
 
-  // Title and subtitle
+  // Title and subtitle (lower on the title page than the body's top margin).
+  v(theme.title-page-offset)
   jdh-frontmatter.show-title-block(fm)
 
   // Render abstract section directly under authors when present:
@@ -812,8 +833,8 @@
 
   place(
     left + bottom,
-    dx: -33%,
-    dy: -10pt,
+    dx: theme.sidebar-dx,
+    dy: theme.sidebar-dy,
     box(width: 27%, {
       set text(font: theme.font)
       grid(columns: 1, gutter: 2em, ..margin.map(side => {
