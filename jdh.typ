@@ -123,14 +123,20 @@
       radius: 4pt,
       inset: (x: 5pt, y: 7pt),
       column-gutter: 16pt,
+      // Space between the speaker names and the first turn.
+      name-gap: 6pt,
       // Turns alternate columns and almost touch, staggered (mockup p12).
       row-gutter: 2pt,
       // Inside a hermeneutics block: a pale tint of the block colour, no border.
       hermeneutics-fill: rgb("#E9FDFB"),
       hermeneutics-stroke: none,
-      // Elsewhere.
+      // Elsewhere: white with a soft drop shadow, no outline (mockup p13).
       fill: white,
-      stroke: 0.5pt + gray.lighten(30%),
+      stroke: none,
+      // Typst has no blur: the shadow is `layers` stacked translucent copies,
+      // each `step` larger, shifted down by `dy`. Measured on the mockup at
+      // 200dpi: ~3pt below (≈13% black at the edge), ~2.5pt at the sides.
+      shadow: (layers: 4, step: 0.8pt, dy: 1.4pt, alpha: 3.2%),
     ),
     // Hermeneutics blocks (`:::{hermeneutics}`): fill only; geometry from callout-block.
     hermeneutics: callout-block + (
@@ -361,18 +367,38 @@
   let n = calc.max(1, speakers.len())
   let dl = jdh-theme.dialogue + theme.at("dialogue", default: (:))
   let in-herm = in-hermeneutics-block.get()
+  let shaded(b) = layout(size => {
+    let m = measure(b, width: size.width)
+    let sh = dl.shadow
+    box(width: m.width, height: m.height, {
+      for k in range(sh.layers) {
+        let o = (k + 1) * sh.step
+        place(dy: sh.dy, box(
+          width: m.width,
+          height: m.height,
+          radius: dl.radius + o,
+          outset: o,
+          fill: black.transparentize(100% - sh.alpha),
+        ))
+      }
+      place(b)
+    })
+  })
   let bubble(body, at-right) = align(
     if at-right { right } else { left },
-    box(
-      fill: if in-herm { dl.hermeneutics-fill } else { dl.fill },
-      stroke: if in-herm { dl.hermeneutics-stroke } else { dl.stroke },
-      radius: dl.radius,
-      inset: dl.inset,
-      {
-        set par(leading: theme.body-leading)
-        align(left, text(size: theme.body-size, body))
-      },
-    ),
+    {
+      let b = box(
+        fill: if in-herm { dl.hermeneutics-fill } else { dl.fill },
+        stroke: if in-herm { dl.hermeneutics-stroke } else { dl.stroke },
+        radius: dl.radius,
+        inset: dl.inset,
+        {
+          set par(leading: theme.body-leading)
+          align(left, text(size: theme.body-size, body))
+        },
+      )
+      if in-herm { b } else { shaded(b) }
+    },
   )
   // No margin paragraph numbers inside the dialogue (same flag as tables).
   in-jdh-table-block.update(true)
@@ -389,7 +415,7 @@
       grid.header(
         repeat: true,
         // Names line up with the text inside the bubbles, as in the mockup.
-        ..speakers.map(s => pad(left: dl.inset.x, bottom: 2pt, text(size: theme.body-size, weight: "bold", s))),
+        ..speakers.map(s => pad(left: dl.inset.x, bottom: dl.name-gap, text(size: theme.body-size, weight: "bold", s))),
       ),
       ..rows
         .map(r => range(n).map(i => {
