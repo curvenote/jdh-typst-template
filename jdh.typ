@@ -1077,6 +1077,13 @@
   // Dialogues can be longer than a page: keep them in the text flow so they
   // break between turns (a floating figure can't break).
   show figure.where(kind: "dialogue"): set figure(placement: none)
+  // Sound (jdh-cli emits audio as kind "sound"): a small speaker icon,
+  // left-aligned above its caption, as in the guideline mockup p12.
+  // (A figure centres its body internally, so lay this kind out directly.)
+  show figure.where(kind: "sound"): it => block(width: 100%, breakable: false, {
+    set align(left)
+    stack(dir: ttb, spacing: 8pt, it.body, it.caption)
+  })
 
   // Hand-authored native Typst tables (not pipeline tablex) may still use show table.
 
