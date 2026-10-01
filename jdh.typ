@@ -644,7 +644,7 @@
       #p-display
       #p-step
       #p-skip.update(true)
-      #if it.level == 3 {
+      #if it.numbering != none {
         numbering(heading-numbering, ..levels)
         [. ]
       }
