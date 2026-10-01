@@ -118,6 +118,20 @@
     ),
     // Full-bleed callout geometry (shared by hermeneutics and narrative-code).
     callout-block: callout-block,
+    // Dialogue bubbles (`#jdh-dialogue`), from the guideline mockup p12–p13.
+    dialogue: (
+      radius: 4pt,
+      inset: (x: 5pt, y: 7pt),
+      column-gutter: 16pt,
+      // Turns alternate columns and almost touch, staggered (mockup p12).
+      row-gutter: 2pt,
+      // Inside a hermeneutics block: a pale tint of the block colour, no border.
+      hermeneutics-fill: rgb("#E9FDFB"),
+      hermeneutics-stroke: none,
+      // Elsewhere.
+      fill: white,
+      stroke: 0.5pt + gray.lighten(30%),
+    ),
     // Hermeneutics blocks (`:::{hermeneutics}`): fill only; geometry from callout-block.
     hermeneutics: callout-block + (
       // Background — saturated aqua/cyan (tweak hex to match JDH target PDF).
@@ -345,14 +359,19 @@
   let th = state("THEME").get()
   let theme = if th == none { jdh-theme } else { th }
   let n = calc.max(1, speakers.len())
+  let dl = jdh-theme.dialogue + theme.at("dialogue", default: (:))
+  let in-herm = in-hermeneutics-block.get()
   let bubble(body, at-right) = align(
     if at-right { right } else { left },
     box(
-      fill: white,
-      stroke: 0.5pt + gray.lighten(30%),
-      radius: 4pt,
-      inset: (x: 8pt, y: 6pt),
-      align(left, text(size: theme.body-size, body)),
+      fill: if in-herm { dl.hermeneutics-fill } else { dl.fill },
+      stroke: if in-herm { dl.hermeneutics-stroke } else { dl.stroke },
+      radius: dl.radius,
+      inset: dl.inset,
+      {
+        set par(leading: theme.body-leading)
+        align(left, text(size: theme.body-size, body))
+      },
     ),
   )
   // No margin paragraph numbers inside the dialogue (same flag as tables).
@@ -362,14 +381,15 @@
     set align(left)
     grid(
       columns: (1fr,) * n,
-      column-gutter: 16pt,
-      row-gutter: 8pt,
+      column-gutter: dl.column-gutter,
+      row-gutter: dl.row-gutter,
       // Speaker names as a repeating header: never left alone at the foot of a
       // page (Typst keeps a header with the next row), and repeated at the top
       // of each page a long dialogue continues onto.
       grid.header(
         repeat: true,
-        ..speakers.map(s => pad(bottom: 2pt, text(size: theme.body-size, weight: "bold", s))),
+        // Names line up with the text inside the bubbles, as in the mockup.
+        ..speakers.map(s => pad(left: dl.inset.x, bottom: 2pt, text(size: theme.body-size, weight: "bold", s))),
       ),
       ..rows
         .map(r => range(n).map(i => {
