@@ -338,8 +338,8 @@
 }
 
 /// Dialogue (JDH `dialog-*` cells, emitted by jdh-cli's jdh-dialogue plugin).
-/// Speaker names head the columns; each turn is a bubble in its speaker's
-/// column, in order. `rows` holds one entry per speaker per row (`none` when
+/// Speaker names head the columns (repeated after a page break); each turn is
+/// a bubble in its speaker's column, in order. `rows` holds one entry per speaker per row (`none` when
 /// that speaker is silent); the last speaker's bubbles align right.
 #let jdh-dialogue(speakers: (), rows: ()) = context {
   let th = state("THEME").get()
@@ -364,7 +364,13 @@
       columns: (1fr,) * n,
       column-gutter: 16pt,
       row-gutter: 8pt,
-      ..speakers.map(s => pad(bottom: 2pt, text(size: theme.body-size, weight: "bold", s))),
+      // Speaker names as a repeating header: never left alone at the foot of a
+      // page (Typst keeps a header with the next row), and repeated at the top
+      // of each page a long dialogue continues onto.
+      grid.header(
+        repeat: true,
+        ..speakers.map(s => pad(bottom: 2pt, text(size: theme.body-size, weight: "bold", s))),
+      ),
       ..rows
         .map(r => range(n).map(i => {
           let c = r.at(i, default: none)
