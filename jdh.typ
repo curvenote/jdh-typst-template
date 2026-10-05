@@ -354,13 +354,20 @@
   let tb = jdh-theme.table
   let shell-inset = tb.at("shell-inset", default: (x: 2pt, y: 2pt))
   let inset = if type(shell-inset) == dictionary { shell-inset } else { (x: shell-inset, y: shell-inset) }
-  block(
+  let shell(breakable) = block(
     width: 100%,
     stroke: tb.at("border-width", default: 0.5pt) + tb.at("border", default: gray),
     inset: inset,
+    breakable: breakable,
   )[
     #body
   ]
+  // Tables sit in the text flow (JDH-040). One that fits on a page moves to the
+  // next page whole; only a table taller than the page breaks between rows.
+  layout(size => {
+    let height = measure(shell(true), width: size.width).height
+    shell(height > size.height)
+  })
 }
 
 /// Mark start of a JDH table (sets styling state for paragraph numbering).
@@ -1093,6 +1100,10 @@
   // Dialogues can be longer than a page: keep them in the text flow so they
   // break between turns (a floating figure can't break).
   show figure.where(kind: "dialogue"): set figure(placement: none)
+  // Tables too: one taller than a page has to break between rows, with its
+  // header repeated (JDH-040, Chronoferencing Table 4).
+  show figure.where(kind: table): set figure(placement: none)
+  show figure.where(kind: "table"): set figure(placement: none)
   // Sound (jdh-cli emits audio as kind "sound"): a small speaker icon,
   // left-aligned above its caption, as in the guideline mockup p12.
   // (A figure centres its body internally, so lay this kind out directly.)
