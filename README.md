@@ -27,7 +27,9 @@ exports:
 | `qr_code` | file | QR code image shown in the sidebar |
 | `fingerprint` | file | Fingerprint image shown in the sidebar |
 
-Required frontmatter: `title`, `authors`. Also read when present: `subtitle`, `short_title`, `open_access`, `keywords`, `date`, `doi`, `venue`, `github`, `first_page`, and the `abstract` part. See `template.yml`.
+Required frontmatter: `title`, `authors`. Also read when present: `subtitle`, `short_title`, `open_access`, `keywords`, `date`, `doi`, `venue`, `license`, `github`, `first_page`, and the `abstract` part. See `template.yml`.
+
+The sidebar's publication block shows the issue (`venue`), the publication date (`date`, or "Forthcoming" when the `forthcoming` option is set), the DOI and the article URL (`article_url` option). The licence badge and text follow `license`, with CC BY-NC-ND as the fallback. jdh-cli sets all of these from the JDH API.
 
 ## JDH theme
 
@@ -42,6 +44,13 @@ Required frontmatter: `title`, `authors`. Also read when present: `subtitle`, `s
 | `table` | JDH tables (`#jdh-table-enter` / `#jdh-table-leave`): zebra striping, row and column limits |
 
 The blocks are emitted by jdh-cli's MyST plugins as raw Typst.
+
+### Paragraph numbers
+
+Paragraphs are numbered in the left margin. Two modes:
+
+- **Cell numbers (JDH articles):** jdh-cli puts `#jdh-cell(n)` before each markdown cell, with the number the JDH website gives that cell. The next paragraph, heading, block quote or list shows `n`; the rest of the cell shows no number. Code cells show none, so the numbers have gaps, as on the website.
+- **Running count:** without any `#jdh-cell` markers, every paragraph and heading takes the next number.
 
 Front matter uses the published [pubmatter](https://github.com/continuous-foundation/pubmatter) package (`@preview/pubmatter:0.2.2`). The JDH title block (title font and size from the theme, boxed author cards with affiliations and ORCID) is in `jdh-frontmatter.typ`, built on pubmatter's public functions.
 

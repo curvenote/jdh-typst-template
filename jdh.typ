@@ -277,6 +277,15 @@
 }
 
 #let paragraph-number-left-offset = state("jdh-paragraph-number-left-offset", 0pt)
+
+/// Paragraph number for the next block, as the JDH website numbers cells
+/// (JDH-042). jdh-cli puts `#jdh-cell(n)` before each markdown cell; the
+/// cell's first paragraph, heading, quote or list shows `n`, and the rest of
+/// the cell shows none. Without any markers, paragraphs are counted in order.
+#let jdh-cell(n) = {
+  state("jdh-cell-mode", false).update(true)
+  state("jdh-cell-num", none).update(n)
+}
 #let in-hermeneutics-block = state("jdh-in-hermeneutics-block", false)
 #let in-narrative-code-block = state("jdh-in-narrative-code-block", false)
 #let in-jdh-table-block = state("jdh-in-jdh-table-block", false)
@@ -612,7 +621,7 @@
   // Otherwise headings (with their larger font) would push the number
   // further left than the paragraph version, causing the columns to
   // not line up.
-  let p-display = context {
+  let p-display-for(num) = context {
     let left-offset = paragraph-number-left-offset.get()
     let dy-extra = 0pt
     if in-narrative-code-block.get() {
@@ -633,11 +642,12 @@
           weight: pnum-theme.weight,
           style: pnum-theme.style,
           fill: pnum-theme.fill,
-          p-counter.display("1"),
+          if num == auto { p-counter.display("1") } else { num },
         )),
       ),
     ))
   }
+  let p-display = p-display-for(auto)
   // Inline variant used by the paragraph rule. Wrapping `place()` in a
   // zero-size `box()` lets the place call live *inside* the paragraph
   // body, so its vertical anchor is the paragraph's first line rather
@@ -647,7 +657,7 @@
   // page break). The outer `text(size: ...)` keeps em units resolved
   // against the body size so the inline column lines up exactly with
   // the heading column.
-  let p-display-inline = context {
+  let p-display-inline-for(num) = context {
     let left-offset = paragraph-number-left-offset.get()
     text(size: theme.body-size, box(width: 0pt, height: 0pt, place(
       left,
@@ -661,10 +671,22 @@
           weight: pnum-theme.weight,
           style: pnum-theme.style,
           fill: pnum-theme.fill,
-          p-counter.display("1"),
+          if num == auto { p-counter.display("1") } else { num },
         )),
       ),
     )))
+  }
+  let p-display-inline = p-display-inline-for(auto)
+  // Cell numbering (JDH-042): set by `jdh-cell(n)` markers from jdh-cli.
+  let cell-mode = state("jdh-cell-mode", false)
+  let cell-num = state("jdh-cell-num", none)
+  // Number for a block (heading, quote, list): the cell's number if one is
+  // waiting, else the running count when there are no markers.
+  let block-number = context {
+    if cell-mode.get() {
+      let n = cell-num.get()
+      if n != none [#p-display-for(str(n))#cell-num.update(none)]
+    } else [#p-display#p-step]
   }
 
   if (page-start != none) {counter(page).update(page-start)}
@@ -743,8 +765,7 @@
       #show: block.with(above: 20pt, below: 13.75pt, sticky: true)
       // Paragraph number is placed *inside* the block so its `place()` is
       // anchored to the heading text's top, not to the above-spacing.
-      #p-display
-      #p-step
+      #block-number
       // Skip paragraph numbering inside the heading body (Typst auto-
       // wraps the body in a paragraph that would otherwise double-step
       // the counter via the `show par` rule).
@@ -762,8 +783,7 @@
       #set text(size: heading-theme.h2.size, weight: heading-theme.h2.weight, style: "italic")
       #set par(leading: heading-theme.h2.line_height)
       #show: block.with(above: 15pt, below: 13.75pt, sticky: true)
-      #p-display
-      #p-step
+      #block-number
       #p-skip.update(true)
       #if it.numbering != none {
         numbering(heading-numbering, ..levels)
@@ -777,8 +797,7 @@
       #set text(size: heading-theme.h3.size, weight: heading-theme.h3.weight)
       #set par(leading: heading-theme.h3.line_height)
       #show: block.with(above: 15pt, below: 13.75pt, sticky: true)
-      #p-display
-      #p-step
+      #block-number
       #p-skip.update(true)
       #if it.numbering != none {
         numbering(heading-numbering, ..levels)
@@ -1077,8 +1096,7 @@
           // Number the code block once at the first line (body-sized column), and
           // suppress the show-par rule inside code / truncation footer paragraphs.
           [
-            #p-display
-            #p-step
+            #context if not cell-mode.get() [#p-display#p-step]
             #p-skip.update(true)
             #code-body
             #p-skip.update(false)
@@ -1141,6 +1159,14 @@
       it
     } else if first-child == p-display-inline or first-child == p-step {
       it
+    } else if type(first-child) == content and first-child.func() == metadata and first-child.value == "jdh-num" {
+      it
+    } else if cell-mode.get() {
+      // One number per cell: only the cell's first paragraph shows it.
+      let n = cell-num.get()
+      if n == none { it } else {
+        par(metadata("jdh-num") + p-display-inline-for(str(n)) + cell-num.update(none) + it.body)
+      }
     } else {
       // Inject the number *inside* the paragraph body via a zero-size
       // box so its vertical anchor follows the paragraph's first line
@@ -1151,6 +1177,17 @@
       // value; otherwise every paragraph would render `n+1`.
       par(p-display-inline + p-step + it.body)
     }
+  }
+  // Block quotes and lists hold no `par`, so a cell that starts with one
+  // shows its number here (6ig87tC5GKjQ's quote cell, JDH-042).
+  show quote.where(block: true): it => context {
+    if cell-mode.get() and cell-num.get() != none [#block-number#it] else { it }
+  }
+  show list: it => context {
+    if cell-mode.get() and cell-num.get() != none [#block-number#it] else { it }
+  }
+  show enum: it => context {
+    if cell-mode.get() and cell-num.get() != none [#block-number#it] else { it }
   }
   // Start counting from 1: the display reads the counter *before* its
   // accompanying step, so without this bump the first paragraph shows 0.
