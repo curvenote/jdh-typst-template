@@ -192,9 +192,13 @@
   } else {
     none
   }
-  let license-url = "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+  // The article's licence (JDH-041), e.g. id "CC-BY-4.0" → "CC-BY".
+  let license = fm.at("license", default: none)
+  let license-url = if type(license) == dictionary { license.at("url", default: none) } else { none }
+  let license-short = if type(license) == dictionary and "id" in license { license.id.replace(regex("-\\d+(\\.\\d+)?$"), "") } else { "CC-BY-NC-ND" }
+  let license-url = if license-url != none { license-url } else { "https://creativecommons.org/licenses/by-nc-nd/4.0/" }
   [
-    © #author-names. Published by De Gruyter in cooperation with the University of Luxembourg Centre for Contemporary and Digital History. This is an Open Access article distributed under the terms of the #link(license-url)[Creative Commons Attribution License CC-BY-NC-ND]
+    © #author-names. Published by De Gruyter in cooperation with the University of Luxembourg Centre for Contemporary and Digital History. This is an Open Access article distributed under the terms of the #link(license-url)[Creative Commons Attribution License #license-short]
   ]
 }
 
@@ -535,13 +539,16 @@
   let fm0 = pubmatter.load(frontmatter)
   let venue_value = if (type(frontmatter) == dictionary) { frontmatter.at("venue", default: none) } else { none }
   let github_value = if (type(frontmatter) == dictionary) { frontmatter.at("github", default: none) } else { none }
+  // The licence comes from the front matter (jdh-cli sets it from the JDH API,
+  // JDH-041); CC BY-NC-ND is the fallback.
+  let license_value = if (type(frontmatter) == dictionary) { frontmatter.at("license", default: none) } else { none }
   let fm = fm0 + (
     open-access: true,
-    license: (
+    license: if type(license_value) == dictionary and license_value.at("id", default: "") != "" { license_value } else { (
       id: "CC-BY-NC-ND-4.0",
       name: "Creative Commons Attribution Non Commercial No Derivatives 4.0 International",
       url: "https://creativecommons.org/licenses/by-nc-nd/4.0/",
-    ),
+    ) },
     venue: (if venue_value != none { venue_value } else { fm0.at("venue", default: none) }),
     github: github_value,
   )
@@ -673,12 +680,7 @@
       inset: (top: 12pt, right: 0pt),
         context [
         #set text(font: theme.font, size: theme.body-size, fill: gray.darken(50%))
-        #pubmatter.show-spaced-content((
-          if("venue" in fm) {
-            if type(fm.venue) == dictionary and "title" in fm.venue { emph(fm.venue.title) }
-            else if type(fm.venue) == str { emph(fm.venue) }
-          },
-        ))
+        // Page count only, as in the guideline; the issue name is in the sidebar.
         #h(1fr)
         #counter(page).display() of #counter(page).final().first()
       ]
@@ -835,12 +837,16 @@
       content: [
         #set par(justify: true)
         #set text(size: 7pt)
-        Digital Tools\
+        // Issue, date, DOI and article URL from the JDH API (JDH-041).
+        #let issue = if type(fm.venue) == dictionary and fm.venue.at("title", default: "") != "" { fm.venue.title } else if type(fm.venue) == str and fm.venue != "" { fm.venue } else { none }
+        #if issue != none { issue; linebreak() }
         #let pub-date = fm.at("date", default: none)
-        #if type(pub-date) == datetime {
-          "Published on " + pub-date.display("[month repr:short] [day], [year]")
+        // MyST fills in today's date when there is none, so jdh-cli says when the
+        // article isn't published yet.
+        #if options.at("forthcoming", default: false) == true or type(pub-date) != datetime {
+          "Forthcoming"
         } else {
-          "Unknown"
+          "Published on " + pub-date.display("[month repr:short] [day], [year]")
         }\
 
         #let doi-val = fm.at("doi", default: none)
@@ -852,12 +858,10 @@
           "DOI unknown"
         }\
 
-        #let venue-url = if type(fm.venue) == dictionary and "url" in fm.venue and fm.venue.url != "" { fm.venue.url } else { none }
-        #let venue-title = if type(fm.venue) == dictionary and "title" in fm.venue { fm.venue.title } else if type(fm.venue) == str { fm.venue } else { "Venue" }
-        #if venue-url != none {
-          link(venue-url, venue-title)
-        } else {
-          "URL unknown"
+        #let article-url = options.at("article_url", default: none)
+        #if type(article-url) == str and article-url != "" {
+          // No hyphens in the URL; it may wrap after "/article/".
+          link(article-url, text(hyphenate: false, article-url.replace(regex("^https?://"), "").replace("/article/", "/article/\u{200B}")))
         }
       ],
     ),

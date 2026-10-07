@@ -41,10 +41,11 @@
     doi: "[-doc.doi-]",
   [# endif #]
   [# if doc.venue #]
+    // pubmatter takes the venue as a string: the JDH issue name (JDH-041).
     [# if doc.venue.title #]
-    venue: (title: "[-doc.venue.title-]", url: "[# if doc.venue.url #][-doc.venue.url-][# endif #]"),
+    venue: "[-doc.venue.title-]",
     [# else #]
-    venue: (title: "[-doc.venue-]", url: ""),
+    venue: "[-doc.venue-]",
     [# endif #]
   [# endif #]
   [# if doc.date #]
@@ -93,6 +94,12 @@
   [# endif #]
   [# if options.fingerprint #]
     fingerprint: "[-options.fingerprint-]",
+  [# endif #]
+  [# if options.article_url #]
+    article_url: "[-options.article_url-]",
+  [# endif #]
+  [# if options.forthcoming #]
+    forthcoming: true,
   [# endif #]
   ),
   parts: (

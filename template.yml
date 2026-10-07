@@ -34,6 +34,7 @@ doc:
   - id: keywords
   - id: date
   - id: doi
+  - id: license
   - id: venue
   - id: github
   - id: first_page
@@ -44,6 +45,12 @@ options:
   - id: fingerprint
     type: file
     description: Path to a fingerprint image to render in the sidebar.
+  - id: article_url
+    type: string
+    description: The article's page on the JDH website, printed in the sidebar (set by jdh-cli).
+  - id: forthcoming
+    type: boolean
+    description: Print "Forthcoming" instead of a publication date (set by jdh-cli when the JDH API has no date).
 parts:
   - id: abstract
     description: >
