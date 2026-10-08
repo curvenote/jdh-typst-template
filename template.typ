@@ -101,6 +101,9 @@
   [# if options.forthcoming #]
     forthcoming: true,
   [# endif #]
+  [# if options.figure_placement #]
+    figure_placement: "[-options.figure_placement-]",
+  [# endif #]
   ),
   parts: (
   [# if parts.abstract #]

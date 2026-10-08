@@ -45,6 +45,10 @@ The sidebar's publication block shows the issue (`venue`), the publication date 
 
 The blocks are emitted by jdh-cli's MyST plugins as raw Typst.
 
+### Figure placement
+
+Figures stay where they are in the text by default (`placement: none`), so the PDF reads in notebook order, like the online article. The `figure_placement` export option (`jdh-cli build --figure-placement auto`) floats them to the top or bottom of a page instead. Tables and dialogue always stay in the text flow.
+
 ### Citations
 
 APA 7th, JDH's house style: "(Hellman, 2001)" in the text and an alphabetical reference list. It's set in two places, and the first wins: the `#bibliography(…, style: "apa")` call in `template.typ`, and `set bibliography(…)` in `jdh.typ`. Change both to switch style.

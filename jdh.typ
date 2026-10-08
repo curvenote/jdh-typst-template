@@ -1128,7 +1128,10 @@
   show figure.where(kind: table): jdh-table-figure
   show figure.where(kind: "table"): jdh-table-figure
   show figure.caption: leftCaption
-  set figure(placement: auto)
+  // Figures stay where they are in the text (JDH-043): floating (`auto`) moved
+  // them away from the paragraphs around them. `jdh-cli build --figure-placement
+  // auto` floats them again (JDH-049). Tables and dialogue always stay in place.
+  set figure(placement: if options.at("figure_placement", default: "none") == "auto" { auto } else { none })
   // Dialogues can be longer than a page: keep them in the text flow so they
   // break between turns (a floating figure can't break).
   show figure.where(kind: "dialogue"): set figure(placement: none)

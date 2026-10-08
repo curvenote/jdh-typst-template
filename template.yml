@@ -51,6 +51,13 @@ options:
   - id: forthcoming
     type: boolean
     description: Print "Forthcoming" instead of a publication date (set by jdh-cli when the JDH API has no date).
+  - id: figure_placement
+    type: choice
+    choices:
+      - none
+      - auto
+    default: none
+    description: '"none" keeps figures where they are in the text; "auto" floats them to the top or bottom of a page (jdh-cli build --figure-placement).'
 parts:
   - id: abstract
     description: >
