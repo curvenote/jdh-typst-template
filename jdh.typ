@@ -733,7 +733,7 @@
   }
   show ref: it => {
     if (it.element == none)  {
-      // This is a citation showing 2024a or [1]
+      // A citation: "(Hellman, 2001)" in APA 7th, JDH's house style (JDH-048)
       show regex("([\d]{1,4}[a-z]?)"): it => text(fill: theme.ref-color, it)
       it
       return
@@ -1146,7 +1146,7 @@
 
   // Hand-authored native Typst tables (not pipeline tablex) may still use show table.
 
-  set bibliography(title: text(theme.body-size, "References"), style: "ieee")
+  set bibliography(title: text(theme.body-size, "References"), style: "apa")
   show bibliography: it => context {
     let th = state("THEME").get()
     let merged = if th == none { jdh-theme } else { th }

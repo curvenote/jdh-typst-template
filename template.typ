@@ -120,5 +120,5 @@
 [-CONTENT-]
 
 [# if doc.bibtex #]
-#bibliography("[-doc.bibtex-]", title: text(10pt, "References"), style: "ieee")
+#bibliography("[-doc.bibtex-]", title: text(10pt, "References"), style: "apa")
 [# endif #]

@@ -45,6 +45,10 @@ The sidebar's publication block shows the issue (`venue`), the publication date 
 
 The blocks are emitted by jdh-cli's MyST plugins as raw Typst.
 
+### Citations
+
+APA 7th, JDH's house style: "(Hellman, 2001)" in the text and an alphabetical reference list. It's set in two places, and the first wins: the `#bibliography(…, style: "apa")` call in `template.typ`, and `set bibliography(…)` in `jdh.typ`. Change both to switch style.
+
 ### Paragraph numbers
 
 Paragraphs are numbered in the left margin. Two modes:
