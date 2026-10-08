@@ -487,7 +487,10 @@
   } else {
     inset
   }
+  // Full width even when the cell holds only a heading (7XSDVCtnbXva p8): a
+  // block without a width shrinks to its content.
   block(
+    width: 100%,
     breakable: true,
     spacing: block-spacing,
     fill: fill,
@@ -1191,6 +1194,22 @@
       par(p-display-inline + p-step + it.body)
     }
   }
+  // Long URLs may break after / ? & = + . - _ (7XSDVCtnbXva p10: a search URL
+  // ran into the margin). A zero-width space marks each break point. Smart
+  // quotes split a URL into separate texts, so match any long unspaced run
+  // that contains URL punctuation, not just one starting with http.
+  // Only in paragraphs and block quotes (whose text is not a `par`): code
+  // blocks are neither, so copied code stays clean.
+  let url-breaks(it) = {
+    show regex("[^\\s]{30,}"): t => {
+      if t.text.contains(regex("[/?&=]")) {
+        t.text.replace(regex("([/?&=+._-])"), m => m.text + "\u{200B}")
+      } else { t }
+    }
+    it
+  }
+  show par: url-breaks
+  show quote: url-breaks
   // Block quotes and lists hold no `par`, so a cell that starts with one
   // shows its number here (6ig87tC5GKjQ's quote cell, JDH-042).
   show quote.where(block: true): it => context {
