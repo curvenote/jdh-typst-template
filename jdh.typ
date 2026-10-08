@@ -343,7 +343,9 @@
 }
 
 /// Full-width colspan cell for the “K rows more” summary row (last tablex row).
-#let jdh-table-more-cell(columns, hidden) = {
+/// Footer row of a shortened table: the full table's size when known
+/// ("11105 rows × 42 columns", as on the JDH website, JDH-045), else "N rows more".
+#let jdh-table-more-cell(columns, hidden, total-rows: none, total-cols: none) = {
   let tb = jdh-theme.table
   let stripe = tb.at("stripe-fill", default: rgb("#E8E8E8"))
   let row-inset = tb.at("row-inset", default: (x: 4pt, y: 6pt))
@@ -358,7 +360,7 @@
       y: row-inset.at("y", default: 6pt),
     ),
   )[
-    #text(size: more-size, weight: more-weight)[#hidden rows more]
+    #text(size: more-size, weight: more-weight)[#if total-rows != none [#total-rows rows × #total-cols columns] else [#hidden rows more]]
   ]
 }
 
