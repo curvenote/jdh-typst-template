@@ -35,6 +35,9 @@
     keyword-badge-radius: 2pt,
     keyword-badge-text-size: 9pt,
     link-color: black,
+    // Links into the online article (`?idx=`: audio, video, interactive
+    // placeholders) must read as links (JDH-044).
+    online-link-color: rgb("#1a5fb4"),
     ref-color: black,
     body-size: 11pt,
     body-weight: 300,
@@ -722,7 +725,12 @@
     none
   }
 
-  show link: it => [#text(fill: theme.link-color)[#it]]
+  show link: it => {
+    if type(it.dest) == str and it.dest.contains("?idx=") {
+      let color = theme.at("online-link-color", default: rgb("#1a5fb4"))
+      text(fill: color, underline(stroke: 0.5pt + color, offset: 1.5pt, it))
+    } else [#text(fill: theme.link-color)[#it]]
+  }
   show ref: it => {
     if (it.element == none)  {
       // This is a citation showing 2024a or [1]
