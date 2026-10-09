@@ -20,6 +20,8 @@ exports:
 
 `jdh-cli build` then runs `myst build --pdf` in the article's `_improved/` workdir, so this repo is expected at `../../jdh-typst-template` relative to that folder (or pass `--template`).
 
+Tested with Typst 0.15.x (MyST runs `typst compile` from the PATH; `jdh-cli build` checks the version).
+
 ## Options and frontmatter
 
 | Option | Type | Purpose |
