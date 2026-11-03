@@ -36,14 +36,16 @@
     keyword-badge-text-size: 9pt,
     link-color: black,
     // Links into the online article (`?idx=`: audio, video, interactive
-    // placeholders) must read as links (JDH-044).
-    online-link-color: rgb("#1a5fb4"),
+    // placeholders): JDH purple with an external-link icon in front (JDH-059).
+    online-link-color: rgb("#5e2bff"),
     ref-color: black,
     body-size: 11pt,
     body-weight: 300,
     body-leading: 1em,
     body-spacing: 3em,
     body-tracking: 0em,
+    // Caption text: italic, a little smaller and tighter than the body (JDH-059).
+    caption: (size: 10pt, leading: 0.75em),
     // Code blocks (plain text, no container/padding/syntax highlighting).
     code: (
       font: "Fira Code",
@@ -140,6 +142,10 @@
       // each `step` larger, shifted down by `dy`. Measured on the mockup at
       // 200dpi: ~3pt below (≈13% black at the edge), ~2.5pt at the sides.
       shadow: (layers: 4, step: 0.8pt, dy: 1.4pt, alpha: 3.2%),
+      // Turns longer than this on one line (about 12 lines in a two-speaker
+      // column) may break across pages, outlined instead of shadowed (JDH-062).
+      long-width: 2000pt,
+      long-stroke: 0.5pt + luma(215),
     ),
     // Hermeneutics blocks (`:::{hermeneutics}`): fill only; geometry from callout-block.
     hermeneutics: callout-block + (
@@ -259,18 +265,20 @@
   // (Defined before the state variables below, so look the state up by key.)
   let left-offset = state("jdh-paragraph-number-left-offset", 0pt).get()
   let label-width = 8em
+  let cap = jdh-theme.caption + theme.at("caption", default: (:))
   set text(size: theme.body-size)
   set align(left)
-  set par(justify: true)
+  // Set before the label: a par setting changed mid-caption splits the paragraph.
+  set par(justify: true, leading: cap.leading)
   state("jdh-p-skip").update(true)
   // Right edge of the label lines up with the right edge of paragraph numbers.
   box(width: 0pt, height: 0pt, place(
     left,
     dx: -pn-margin - left-offset - (label-width - pn-width),
     dy: pn.at("inline-baseline", default: -0.75em),
-    box(width: label-width, align(right + top, text(weight: "bold")[#it.supplement #it.counter.display(it.numbering)])),
+    box(width: label-width, align(right + top, text(weight: "bold", style: "normal")[#it.supplement #it.counter.display(it.numbering)])),
   ))
-  it.body
+  text(style: "italic", size: cap.size, it.body)
   state("jdh-p-skip").update(false)
 }
 
@@ -441,6 +449,29 @@
       if in-herm { b } else { shaded(b) }
     },
   )
+  // A long turn may not fit on the page: a breakable block that continues on
+  // the next page instead of leaving a gap (JDH-062, Chronoferencing p23). The
+  // drop shadow is measured to a fixed size and can't break, so a long bubble
+  // outside a hermeneutics block gets a thin outline instead.
+  let long-bubble(body, at-right) = align(
+    if at-right { right } else { left },
+    block(
+      breakable: true,
+      fill: if in-herm { dl.hermeneutics-fill } else { dl.fill },
+      stroke: if in-herm { dl.hermeneutics-stroke } else { dl.long-stroke },
+      radius: dl.radius,
+      inset: dl.inset,
+      {
+        set par(leading: theme.body-leading)
+        align(left, text(size: theme.body-size, body))
+      },
+    ),
+  )
+  // Natural one-line width as a cheap length test: over `long-width`, the turn
+  // runs to many lines.
+  let turn(body, at-right) = context {
+    if measure(text(size: theme.body-size, body)).width > dl.long-width { long-bubble(body, at-right) } else { bubble(body, at-right) }
+  }
   // No margin paragraph numbers inside the dialogue (same flag as tables).
   in-jdh-table-block.update(true)
   block(width: 100%, breakable: true, {
@@ -461,7 +492,7 @@
       ..rows
         .map(r => range(n).map(i => {
           let c = r.at(i, default: none)
-          if c == none { [] } else { bubble(c, n > 1 and i == n - 1) }
+          if c == none { [] } else { turn(c, n > 1 and i == n - 1) }
         }))
         .flatten(),
     )
@@ -730,15 +761,21 @@
 
   show link: it => {
     if type(it.dest) == str and it.dest.contains("?idx=") {
-      let color = theme.at("online-link-color", default: rgb("#1a5fb4"))
-      text(fill: color, underline(stroke: 0.5pt + color, offset: 1.5pt, it))
+      let color = theme.at("online-link-color", default: rgb("#5e2bff"))
+      // External-link icon (a box with an arrow out of its corner), drawn in the link colour.
+      let icon = image(bytes(
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='" + color.to-hex()
+          + "' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/><path d='M15 3h6v6'/><path d='M10 14 21 3'/></svg>"
+      ), format: "svg", height: 0.8em)
+      text(fill: color, style: "normal", box(baseline: 0.1em, icon) + h(0.3em) + it)
     } else [#text(fill: theme.link-color)[#it]]
   }
   show ref: it => {
     if (it.element == none)  {
-      // A citation: "(Hellman, 2001)" in APA 7th, JDH's house style (JDH-048)
+      // A citation: "(Hellman, 2001)" in APA 7th, JDH's house style (JDH-048),
+      // set in italic (JDH-059).
       show regex("([\d]{1,4}[a-z]?)"): it => text(fill: theme.ref-color, it)
-      it
+      text(style: "italic", it)
       return
     }
     // The rest of the references, like `Figure 1`
@@ -840,27 +877,6 @@
   }
 
 
-  // Title and subtitle (lower on the title page than the body's top margin).
-  v(theme.title-page-offset)
-  jdh-frontmatter.show-title-block(fm)
-
-  // Render abstract section directly under authors when present:
-  // title -> keyword badges -> abstract body (italic).
-  if (abstract_content != none) {
-    block(above: 1em, below: 0.6em)[
-      #set text(font: theme.font, size: theme.body-size, weight: theme.body-weight, tracking: theme.body-tracking)
-      #text(fill: theme.color, weight: "semibold", "Abstract")
-      #parbreak()
-      #keywords-badges(theme, fm.at("keywords", default: none))
-      #parbreak()
-      #set par(justify: true, leading: theme.body-leading)
-      #text(style: "italic", abstract_content)
-    ]
-  } else {
-    // Without abstract, keep keywords immediately after authors.
-    keywords-badges(theme, fm.at("keywords", default: none))
-  }
-
   let corresponding = fm.authors.filter((author) => "email" in author).at(0, default: none)
   let qr_code_path = options.at("qr_code", default: none)
   let margin = (
@@ -942,6 +958,8 @@
     }
   ).filter((m) => m != none)
 
+  // Placed before the title so it always lands on page 1, even when a long
+  // abstract runs onto page 2 (JDH-060).
   place(
     left + bottom,
     dx: theme.sidebar-dx,
@@ -961,6 +979,27 @@
       }))
     }),
   )
+
+  // Title and subtitle (lower on the title page than the body's top margin).
+  v(theme.title-page-offset)
+  jdh-frontmatter.show-title-block(fm)
+
+  // Render abstract section directly under authors when present:
+  // title -> keyword badges -> abstract body (italic).
+  if (abstract_content != none) {
+    block(above: 1em, below: 0.6em)[
+      #set text(font: theme.font, size: theme.body-size, weight: theme.body-weight, tracking: theme.body-tracking)
+      #text(fill: theme.color, weight: "semibold", "Abstract")
+      #parbreak()
+      #keywords-badges(theme, fm.at("keywords", default: none))
+      #parbreak()
+      #set par(justify: true, leading: theme.body-leading)
+      #text(style: "italic", abstract_content)
+    ]
+  } else {
+    // Without abstract, keep keywords immediately after authors.
+    keywords-badges(theme, fm.at("keywords", default: none))
+  }
 
   show par: set par(spacing: theme.body-spacing, justify: true, leading: theme.body-leading)
 
@@ -1149,6 +1188,25 @@
     set align(left)
     stack(dir: ttb, spacing: 8pt, it.body, it.caption)
   })
+
+  // Figures and videos start at the left edge of the text column, with the
+  // caption under them, also left-aligned (JDH-065); the label stays in the
+  // margin (leftCaption). Floating figures (`figure_placement: auto`) keep
+  // Typst's layout, which handles the float.
+  let left-figure(it) = {
+    if it.placement != none { return it }
+    block(width: 100%, breakable: false, {
+      set align(left)
+      it.body
+      if it.caption != none {
+        v(it.gap, weak: true)
+        it.caption
+      }
+    })
+  }
+  show figure.where(kind: "figure"): left-figure
+  show figure.where(kind: image): left-figure
+  show figure.where(kind: "video"): left-figure
 
   // Hand-authored native Typst tables (not pipeline tablex) may still use show table.
 
