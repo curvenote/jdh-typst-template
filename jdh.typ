@@ -46,6 +46,8 @@
     body-tracking: 0em,
     // Caption text: italic, a little smaller and tighter than the body (JDH-059).
     caption: (size: 10pt, leading: 0.75em),
+    // Block quotes: a line on the left, with the running text's line spacing (JDH-064).
+    quote: (line-width: 1.5pt, inset: 1em),
     // Code blocks (plain text, no container/padding/syntax highlighting).
     code: (
       font: "Fira Code",
@@ -830,7 +832,7 @@
     ] else if it.level == 2 [
       // Second-level headings are run-ins.
       #set par(first-line-indent: 0pt)
-      #set text(size: heading-theme.h2.size, weight: heading-theme.h2.weight, style: "italic")
+      #set text(size: heading-theme.h2.size, weight: heading-theme.h2.weight)
       #set par(leading: heading-theme.h2.line_height)
       #show: block.with(above: 15pt, below: 13.75pt, sticky: true)
       #block-number
@@ -1139,7 +1141,7 @@
           [
             #p-step
             #p-skip.update(true)
-            #hermeneutics-code-marker([HERMENEUTICS\ CODE EXCERPT], kind: "start", dy: marker.at("start-dy", default: marker-def.at("start-dy")))
+            #hermeneutics-code-marker(if hidden-lines > 0 [HERMENEUTICS\ CODE EXCERPT] else [HERMENEUTICS\ CODE], kind: "start", dy: marker.at("start-dy", default: marker-def.at("start-dy")))
             #code-body
             #hermeneutics-code-marker([END], kind: "end", dy: marker.at("end-dy", default: marker-def.at("end-dy")))
             #p-skip.update(false)
@@ -1270,8 +1272,20 @@
   show quote: url-breaks
   // Block quotes and lists hold no `par`, so a cell that starts with one
   // shows its number here (6ig87tC5GKjQ's quote cell, JDH-042).
+  let quote-block(it) = {
+    let q = jdh-theme.quote + theme.at("quote", default: (:))
+    url-breaks(block(
+      width: 100%,
+      stroke: (left: q.line-width + theme.color),
+      inset: (x: q.inset),
+      {
+        set par(justify: true, leading: theme.body-leading)
+        it.body
+      },
+    ))
+  }
   show quote.where(block: true): it => context {
-    if cell-mode.get() and cell-num.get() != none [#block-number#it] else { it }
+    if cell-mode.get() and cell-num.get() != none [#block-number#quote-block(it)] else { quote-block(it) }
   }
   show list: it => context {
     if cell-mode.get() and cell-num.get() != none [#block-number#it] else { it }
