@@ -42,12 +42,16 @@ The sidebar's publication block shows the issue (`venue`), the publication date 
 | `hermeneutics` | Cyan full-width blocks (`#hermeneutics-block`) |
 | `narrative-code` | Gray full-width code blocks (`#narrative-code-block`) |
 | `table` | JDH tables (`#jdh-table-enter` / `#jdh-table-leave`): zebra striping, row and column limits |
+| `caption` | Figure and table captions: italic, slightly smaller, label in the left margin |
+| `online-link-color` | "Look at the figure online" links: JDH purple with an external-link icon |
+| `quote` | Block quotes: a line on the left, the running text's line spacing, the author's own bold and italic kept |
+| `dialogue` | Dialogue bubbles; a turn taller than `long-height` may continue on the next page, outlined instead of shadowed |
 
 The blocks are emitted by jdh-cli's MyST plugins as raw Typst.
 
 ### Figure placement
 
-Figures stay where they are in the text by default (`placement: none`), so the PDF reads in notebook order, like the online article. The `figure_placement` export option (`jdh-cli build --figure-placement auto`) floats them to the top or bottom of a page instead. Tables and dialogue always stay in the text flow.
+Figures stay where they are in the text by default (`placement: none`), so the PDF reads in notebook order, like the online article. The `figure_placement` export option (`jdh-cli build --figure-placement auto`) floats them to the top or bottom of a page instead. Tables and dialogue always stay in the text flow. Figures, videos and their captions start at the left edge of the text column, with the label in the left margin.
 
 ### Citations
 
