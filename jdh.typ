@@ -144,9 +144,9 @@
       // each `step` larger, shifted down by `dy`. Measured on the mockup at
       // 200dpi: ~3pt below (≈13% black at the edge), ~2.5pt at the sides.
       shadow: (layers: 4, step: 0.8pt, dy: 1.4pt, alpha: 3.2%),
-      // Turns longer than this on one line (about 12 lines in a two-speaker
-      // column) may break across pages, outlined instead of shadowed (JDH-062).
-      long-width: 2000pt,
+      // Turns taller than this (about 12 lines) may break across pages,
+      // outlined instead of shadowed (JDH-062).
+      long-height: 200pt,
       long-stroke: 0.5pt + luma(215),
     ),
     // Hermeneutics blocks (`:::{hermeneutics}`): fill only; geometry from callout-block.
@@ -469,11 +469,17 @@
       },
     ),
   )
-  // Natural one-line width as a cheap length test: over `long-width`, the turn
-  // runs to many lines.
-  let turn(body, at-right) = context {
-    if measure(text(size: theme.body-size, body)).width > dl.long-width { long-bubble(body, at-right) } else { bubble(body, at-right) }
-  }
+  // Height at the column's width: a turn taller than `long-height` may break.
+  // (A width test missed turns made of many short lines, Chronoferencing p27.)
+  let turn(body, at-right) = layout(size => {
+    let h = measure(
+      block(width: size.width, inset: dl.inset, {
+        set par(leading: theme.body-leading)
+        text(size: theme.body-size, body)
+      }),
+    ).height
+    if h > dl.long-height { long-bubble(body, at-right) } else { bubble(body, at-right) }
+  })
   // No margin paragraph numbers inside the dialogue (same flag as tables).
   in-jdh-table-block.update(true)
   block(width: 100%, breakable: true, {
