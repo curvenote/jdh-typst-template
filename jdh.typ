@@ -592,6 +592,18 @@
     .replace(regex("(?m)^\s*doi\s*=\s*\{([^}\n]*)\},?[ \t]*\r?\n"), m => {
       if m.captures.at(0).starts-with("10.") { m.text } else { "" }
     })
+    // Typst's APA style links only the DOI itself, not the "https://doi.org/" before it,
+    // but links a URL in full. Give each entry with a DOI that as its URL instead (same text).
+    .split("\n@")
+    .map(entry => {
+      let doi = entry.find(regex("(?m)^\s*doi\s*=\s*\{10\.[^}\n]*\}"))
+      if doi == none { return entry }
+      let id = doi.split("{").at(1).trim("}")
+      entry
+        .replace(regex("(?m)^\s*url\s*=\s*\{[^}\n]*\},?[ \t]*\r?\n"), "")
+        .replace(doi, "\turl = {https://doi.org/" + id + "}")
+    })
+    .join("\n@")
 }
 
 #let template(
