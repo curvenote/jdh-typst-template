@@ -588,6 +588,9 @@
       let n = int(m.captures.at(1))
       if n >= 1 and n <= 12 { m.captures.at(0) + "{" + jdh-bib-months.at(n - 1) + "}" } else { m.text }
     })
+    // MyST writes curly double quotes as LaTeX ``…'', which Typst prints as-is: put them back.
+    .replace("``", "“")
+    .replace("''", "”")
     .replace(regex("(\bdoi\s*=\s*\{)\s*https?://(?:dx\.)?doi\.org/"), m => m.captures.at(0))
     .replace(regex("(?m)^\s*doi\s*=\s*\{([^}\n]*)\},?[ \t]*\r?\n"), m => {
       if m.captures.at(0).starts-with("10.") { m.text } else { "" }
