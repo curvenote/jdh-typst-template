@@ -576,6 +576,24 @@
   ]
 }
 
+// Tidy the bibliography MyST writes before Typst reads it (JDH-072).
+// - Numeric months (`month = {9}`) are not read by Typst, so the month was lost: use names.
+// - A DOI given as a full URL got doi.org printed twice: keep only the DOI.
+// - MyST takes a "DOI" from any URL containing "10" and digits (e.g. archive.org/post/1009990/...):
+//   drop any DOI that does not start with "10.".
+#let jdh-bib-months = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
+#let jdh-clean-bib(src) = {
+  src
+    .replace(regex("(\bmonth\s*=\s*)\{0?(\d{1,2})\}"), m => {
+      let n = int(m.captures.at(1))
+      if n >= 1 and n <= 12 { m.captures.at(0) + "{" + jdh-bib-months.at(n - 1) + "}" } else { m.text }
+    })
+    .replace(regex("(\bdoi\s*=\s*\{)\s*https?://(?:dx\.)?doi\.org/"), m => m.captures.at(0))
+    .replace(regex("(?m)^\s*doi\s*=\s*\{([^}\n]*)\},?[ \t]*\r?\n"), m => {
+      if m.captures.at(0).starts-with("10.") { m.text } else { "" }
+    })
+}
+
 #let template(
   frontmatter: (),
   heading-numbering: none,
