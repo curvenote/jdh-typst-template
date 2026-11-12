@@ -123,5 +123,5 @@
 [-CONTENT-]
 
 [# if doc.bibtex #]
-#bibliography(bytes(jdh-clean-bib(read("[-doc.bibtex-]"))), title: text(10pt, "References"), style: "apa")
+#jdh-bibliography(read("[-doc.bibtex-]"), title: text(10pt, "References"), style: "apa")
 [# endif #]

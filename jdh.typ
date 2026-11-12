@@ -606,6 +606,82 @@
     .join("\n@")
 }
 
+// Links from each reference back to the text (JDH-058). A PDF link can't know where the
+// reader came from, so clicking the author goes to the reference's first citation.
+// Typst's bibliography entries don't carry their key, so each entry is matched to a key
+// by its year and the start of its title (or first author when there is no title), read from the .bib file.
+#let jdh-bib-norm(s) = lower(s).replace(regex("[^a-z0-9]"), "")
+// BibTeX accents ({\' e}, {\c c}) are dropped whole, as non-ASCII letters are in the PDF text.
+#let jdh-bib-norm-tex(s) = jdh-bib-norm(s
+  .replace(regex("\\\\[cvHukrdbt](\\s+[a-zA-Z]|\\{[a-zA-Z]\\})"), "")
+  .replace(regex("\\\\[^a-zA-Z\\s]\\s*\\{?[a-zA-Z]\\}?"), "")
+  .replace(regex("\\\\[a-zA-Z]+(\\{\\})?"), ""))
+#let jdh-bib-index(src) = src.split("\n@").map(entry => {
+  let key = entry.match(regex("^@?[a-zA-Z]+\\{([^,\\s]+),"))
+  if key == none { return none }
+  let field(name) = {
+    let m = entry.match(regex("(?m)^\\s*" + name + "\\s*=\\s*\\{(.*)\\},?\\s*$"))
+    if m == none { "" } else { m.captures.at(0) }
+  }
+  let title = jdh-bib-norm-tex(field("title"))
+  let first-author = field("author").split(" and ").first().split(",").first()
+  (
+    key: key.captures.at(0),
+    year: field("year"),
+    title: title.slice(0, calc.min(25, title.len())),
+    author: jdh-bib-norm-tex(first-author),
+  )
+}).filter(e => e != none and (e.title != "" or e.author != ""))
+#let jdh-plain-text(c) = {
+  if type(c) == str { c }
+  else if c.has("text") { c.text }
+  else if c.has("children") { c.children.map(jdh-plain-text).join("") }
+  else if c.has("body") { jdh-plain-text(c.body) }
+  else { "" }
+}
+#let jdh-first-text(c) = {
+  if c.has("text") { return c.text }
+  if c.has("children") {
+    for ch in c.children {
+      let t = jdh-first-text(ch)
+      if t != none and t.trim() != "" { return t }
+    }
+    return none
+  }
+  if c.has("body") { return jdh-first-text(c.body) }
+  none
+}
+
+#let jdh-bibliography(src, ..args) = {
+  let src = jdh-clean-bib(src)
+  let index = jdh-bib-index(src)
+  show bibliography: it => {
+    show block: b => context {
+      let raw = jdh-plain-text(b.body)
+      let text = jdh-bib-norm(raw)
+      // The year as printed, "(2018", so a year inside another title doesn't count.
+      let hits = index.filter(e => (
+        (e.year == "" or raw.contains("(" + e.year))
+          and (if e.title != "" { text.contains(e.title) } else { text.starts-with(e.author) })
+      ))
+      if hits.len() > 1 { hits = hits.filter(e => e.author != "" and text.starts-with(e.author)) }
+      // A short title ("Internet Archive") can sit inside another entry: the longest title wins.
+      if hits.len() > 1 {
+        let longest = calc.max(..hits.map(e => e.title.len()))
+        hits = hits.filter(e => e.title.len() == longest)
+      }
+      if hits.len() != 1 { return b }
+      let cites = query(cite.where(key: label(hits.first().key)))
+      let author = jdh-first-text(b.body)
+      if cites.len() == 0 or author == none { return b }
+      show author: it => link(cites.first().location(), it)
+      b
+    }
+    it
+  }
+  bibliography(bytes(src), ..args)
+}
+
 #let template(
   frontmatter: (),
   heading-numbering: none,
