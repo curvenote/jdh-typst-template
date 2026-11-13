@@ -53,9 +53,25 @@ The blocks are emitted by jdh-cli's MyST plugins as raw Typst.
 
 Figures stay where they are in the text by default (`placement: none`), so the PDF reads in notebook order, like the online article. The `figure_placement` export option (`jdh-cli build --figure-placement auto`) floats them to the top or bottom of a page instead. Tables and dialogue always stay in the text flow. Figures, videos and their captions start at the left edge of the text column, with the label in the left margin.
 
+### Preprint watermark
+
+The `preprint` export option (`jdh-cli build --preprint`) draws a watermark across every page, for a PDF built before the article is published. The wording comes from the `preprint_text` option, everything else from the `preprint` theme tokens in `jdh.typ`:
+
+| Token | Default | |
+|---|---|---|
+| `text` | `"PREPRINT"` | wording, when `preprint_text` isn't set |
+| `font`, `size`, `weight`, `tracking` | Fira Sans, 64pt, 700, 0.08em | at 64pt the rotated text fits an A4 page; a longer word needs a smaller size |
+| `fill` | `luma(0).transparentize(90%)` | translucent, so the text it crosses stays readable |
+| `angle` | `-30deg` | |
+| `over` | `true` | drawn on top of the page. Set `false` to put it behind — but a hermeneutics band or a figure is opaque and will hide it there |
+
+This styling is a placeholder until JDH supply a design; it's all tokens, so changing it needs no code.
+
 ### Citations
 
-APA 7th, JDH's house style: "(Hellman, 2001)" in the text and an alphabetical reference list. It's set in two places, and the first wins: the `#bibliography(…, style: "apa")` call in `template.typ`, and `set bibliography(…)` in `jdh.typ`. Change both to switch style.
+APA 7th, JDH's house style: "(Hellman, 2001)" in the text and an alphabetical reference list. It's set in two places, and the first wins: the `#bibliography(…, style: …)` call in `template.typ`, and `set bibliography(…)` in `jdh.typ`.
+
+The `csl` export option (`jdh-cli build --csl <file>`) replaces the built-in style with a [CSL](https://citationstyles.org) file, for both the inline citations and the reference list. MyST copies the file next to `article.typ` and rewrites the path, and both call sites read the option, so there is nothing to change in the template to use one.
 
 ### Paragraph numbers
 

@@ -101,6 +101,15 @@
   [# if options.forthcoming #]
     forthcoming: true,
   [# endif #]
+  [# if options.csl #]
+    csl: "[-options.csl-]",
+  [# endif #]
+  [# if options.preprint #]
+    preprint: true,
+  [# endif #]
+  [# if options.preprint_text #]
+    preprint_text: "[-options.preprint_text-]",
+  [# endif #]
   [# if options.figure_placement #]
     figure_placement: "[-options.figure_placement-]",
   [# endif #]
@@ -123,5 +132,9 @@
 [-CONTENT-]
 
 [# if doc.bibtex #]
+[# if options.csl #]
+#jdh-bibliography(read("[-doc.bibtex-]"), title: text(10pt, "References"), style: "[-options.csl-]")
+[# else #]
 #jdh-bibliography(read("[-doc.bibtex-]"), title: text(10pt, "References"), style: "apa")
+[# endif #]
 [# endif #]

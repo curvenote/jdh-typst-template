@@ -48,6 +48,23 @@
     caption: (size: 10pt, leading: 0.75em),
     // Block quotes: a line on the left, with the running text's line spacing (JDH-064).
     quote: (line-width: 1.5pt, inset: 1em),
+    // Watermark for a PDF built before publication (`preprint` option, JDH-077).
+    // A placeholder until JDH give us a design: change the tokens, not the code.
+    // The `preprint_text` option overrides `text` without editing the theme.
+    preprint: (
+      text: "PREPRINT",
+      font: "Fira Sans",
+      size: 64pt,
+      weight: 700,
+      tracking: 0.08em,
+      // Translucent, so the text it crosses stays readable.
+      fill: luma(0).transparentize(90%),
+      angle: -30deg,
+      // Drawn over the page, not behind it: a hermeneutics band or a figure is
+      // opaque and would hide a background watermark on exactly the pages that
+      // most need marking.
+      over: true,
+    ),
     // Code blocks (plain text, no container/padding/syntax highlighting).
     code: (
       font: "Fira Code",
@@ -847,8 +864,29 @@
 
   if (page-start != none) {counter(page).update(page-start)}
   state("THEME").update(theme)
+  // Watermark across every page of a pre-publication build (JDH-077). Placeholder
+  // styling: the wording comes from the `preprint_text` option, everything else
+  // from `jdh-theme.preprint`, so JDH can restyle it without touching this code.
+  let wm-def = jdh-theme.at("preprint")
+  let wm = theme.at("preprint", default: wm-def)
+  let preprint-watermark = if options.at("preprint", default: false) == true {
+    let label = options.at("preprint_text", default: wm.at("text", default: wm-def.at("text")))
+    place(center + horizon, rotate(wm.at("angle", default: wm-def.at("angle")), text(
+      font: wm.at("font", default: wm-def.at("font")),
+      size: wm.at("size", default: wm-def.at("size")),
+      weight: wm.at("weight", default: wm-def.at("weight")),
+      tracking: wm.at("tracking", default: wm-def.at("tracking")),
+      fill: wm.at("fill", default: wm-def.at("fill")),
+      label,
+    )))
+  } else {
+    none
+  }
+  let wm-over = wm.at("over", default: wm-def.at("over")) == true
   set page(
     paper: paper-size,
+    background: if wm-over { none } else { preprint-watermark },
+    foreground: if wm-over { preprint-watermark } else { none },
     margin: (left: 25%, right: theme.page-margin-right, top: theme.page-margin-top, bottom: theme.page-margin-bottom),
     footer-descent: theme.footer-descent,
     header: none,
@@ -1327,7 +1365,14 @@
 
   // Hand-authored native Typst tables (not pipeline tablex) may still use show table.
 
-  set bibliography(title: text(theme.body-size, "References"), style: "apa")
+  // APA 7th unless a CSL file is supplied (`csl` option, JDH-078). `template.typ`
+  // passes the same style to its own `#jdh-bibliography` call, which wins; this
+  // covers a document that calls `#bibliography` itself.
+  let csl-path = options.at("csl", default: none)
+  set bibliography(
+    title: text(theme.body-size, "References"),
+    style: if type(csl-path) == str and csl-path != "" { csl-path } else { "apa" },
+  )
   show bibliography: it => context {
     let th = state("THEME").get()
     let merged = if th == none { jdh-theme } else { th }

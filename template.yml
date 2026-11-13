@@ -51,6 +51,15 @@ options:
   - id: forthcoming
     type: boolean
     description: Print "Forthcoming" instead of a publication date (set by jdh-cli when the JDH API has no date).
+  - id: csl
+    type: file
+    description: A CSL style file for the bibliography and citations, instead of Typst's built-in APA (jdh-cli build --csl).
+  - id: preprint
+    type: boolean
+    description: Watermark every page as a pre-publication build (jdh-cli build --preprint).
+  - id: preprint_text
+    type: string
+    description: Wording of the preprint watermark (default "PREPRINT").
   - id: figure_placement
     type: choice
     choices:
