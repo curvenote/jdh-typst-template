@@ -122,7 +122,7 @@ typst compile \
   <a href="https://www.c2dh.uni.lu">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset=".github/assets/c2dh-dark.svg">
-      <img src=".github/assets/c2dh-light.svg" alt="C2DH, University of Luxembourg" height="46">
+      <img src=".github/assets/c2dh-light.svg" alt="C2DH, University of Luxembourg" height="52">
     </picture>
   </a>
 </p>
