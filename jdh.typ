@@ -161,6 +161,10 @@
       // each `step` larger, shifted down by `dy`. Measured on the mockup at
       // 200dpi: ~3pt below (≈13% black at the edge), ~2.5pt at the sides.
       shadow: (layers: 4, step: 0.8pt, dy: 1.4pt, alpha: 3.2%),
+      // Space between the last bubble and the caption line. Typst's figure
+      // default (0.65em) sits too tight here, because the bubble's drop shadow
+      // already eats ~4pt of it (JDH-081).
+      caption-gap: 16pt,
       // Turns taller than this (about 12 lines) may break across pages,
       // outlined instead of shadowed (JDH-062).
       long-height: 200pt,
@@ -1330,8 +1334,13 @@
   // auto` floats them again (JDH-049). Tables and dialogue always stay in place.
   set figure(placement: if options.at("figure_placement", default: "none") == "auto" { auto } else { none })
   // Dialogues can be longer than a page: keep them in the text flow so they
-  // break between turns (a floating figure can't break).
-  show figure.where(kind: "dialogue"): set figure(placement: none)
+  // break between turns (a floating figure can't break). The caption also needs
+  // more room than Typst's default gap leaves (JDH-081).
+  let dialogue-theme = jdh-theme.dialogue + theme.at("dialogue", default: (:))
+  show figure.where(kind: "dialogue"): set figure(
+    placement: none,
+    gap: dialogue-theme.at("caption-gap", default: 16pt),
+  )
   // Tables too: one taller than a page has to break between rows, with its
   // header repeated (JDH-040, Chronoferencing Table 4).
   show figure.where(kind: table): set figure(placement: none)
