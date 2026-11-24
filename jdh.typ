@@ -981,7 +981,7 @@
       )
       #set par(leading: if is-ack { heading-theme.abstract.line_height } else { heading-theme.h1.line_height })
       #show: smallcaps
-      #show: block.with(above: 36pt, below: 12pt, sticky: true)
+      #show: block.with(above: 42pt, below: 16pt, sticky: true)
       // Paragraph number is placed *inside* the block so its `place()` is
       // anchored to the heading text's top, not to the above-spacing.
       #block-number
@@ -1001,7 +1001,7 @@
       #set par(first-line-indent: 0pt)
       #set text(size: heading-theme.h2.size, weight: heading-theme.h2.weight)
       #set par(leading: heading-theme.h2.line_height)
-      #show: block.with(above: 33pt, below: 11pt, sticky: true)
+      #show: block.with(above: 38pt, below: 15pt, sticky: true)
       #block-number
       #p-skip.update(true)
       #if it.numbering != none {
@@ -1015,7 +1015,7 @@
       // Third level headings are run-ins too, but different.
       #set text(size: heading-theme.h3.size, weight: heading-theme.h3.weight)
       #set par(leading: heading-theme.h3.line_height)
-      #show: block.with(above: 33pt, below: 11pt, sticky: true)
+      #show: block.with(above: 38pt, below: 15pt, sticky: true)
       #block-number
       #p-skip.update(true)
       #if it.numbering != none {
