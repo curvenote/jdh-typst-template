@@ -174,6 +174,13 @@
     hermeneutics: callout-block + (
       // Background — saturated aqua/cyan (tweak hex to match JDH target PDF).
       fill: rgb("#D3FFF6"),
+      // Margin callouts beside hermeneutics code ("HERMENEUTICS CODE EXCERPT",
+      // "HERMENEUTICS CODE", "END"). Turned off by default (JDH-099): they marked
+      // code on the hermeneutics layer as distinct from hermeneutics text, and in
+      // V3 articles code always lives on the code layer, so the distinction no
+      // longer describes anything. The drawing code below is kept as a template
+      // feature — set this to true to bring the callouts back.
+      show-code-marker: false,
       code-marker: (
         // Position the marker in the left sidebar column, not in the paragraph
         // number gutter. Coordinates are relative to the padded code content.
@@ -394,7 +401,10 @@
       y: row-inset.at("y", default: 6pt),
     ),
   )[
-    #text(size: more-size, weight: more-weight)[#if total-rows != none [#total-rows rows × #total-cols columns] else [#hidden rows more]]
+    // JDH-098: say which number this is. A reader cannot tell whether "11105 rows"
+    // is the whole table or only what is still to come, so the total case is
+    // labelled "total" and the remainder case keeps "more".
+    #text(size: more-size, weight: more-weight)[#if total-rows != none [total #total-rows rows × #total-cols columns] else [#hidden rows more]]
   ]
 }
 
@@ -971,7 +981,7 @@
       )
       #set par(leading: if is-ack { heading-theme.abstract.line_height } else { heading-theme.h1.line_height })
       #show: smallcaps
-      #show: block.with(above: 20pt, below: 13.75pt, sticky: true)
+      #show: block.with(above: 42pt, below: 16pt, sticky: true)
       // Paragraph number is placed *inside* the block so its `place()` is
       // anchored to the heading text's top, not to the above-spacing.
       #block-number
@@ -991,7 +1001,7 @@
       #set par(first-line-indent: 0pt)
       #set text(size: heading-theme.h2.size, weight: heading-theme.h2.weight)
       #set par(leading: heading-theme.h2.line_height)
-      #show: block.with(above: 15pt, below: 13.75pt, sticky: true)
+      #show: block.with(above: 38pt, below: 15pt, sticky: true)
       #block-number
       #p-skip.update(true)
       #if it.numbering != none {
@@ -1005,7 +1015,7 @@
       // Third level headings are run-ins too, but different.
       #set text(size: heading-theme.h3.size, weight: heading-theme.h3.weight)
       #set par(leading: heading-theme.h3.line_height)
-      #show: block.with(above: 15pt, below: 13.75pt, sticky: true)
+      #show: block.with(above: 38pt, below: 15pt, sticky: true)
       #block-number
       #p-skip.update(true)
       #if it.numbering != none {
@@ -1293,14 +1303,20 @@
         if in-hermeneutics-block.get() {
           let marker-def = hm-def.at("code-marker")
           let marker = hm.at("code-marker", default: marker-def)
+          // JDH-099: off by default; the drawing code stays for whoever wants it back.
+          let show-code-marker = hm.at("show-code-marker", default: hm-def.at("show-code-marker", default: false))
           // Step the counter but hide the margin number; p-skip suppresses
           // internal paragraphs (code lines, "N lines more" footer).
           [
             #p-step
             #p-skip.update(true)
-            #hermeneutics-code-marker(if hidden-lines > 0 [HERMENEUTICS\ CODE EXCERPT] else [HERMENEUTICS\ CODE], kind: "start", dy: marker.at("start-dy", default: marker-def.at("start-dy")))
+            #if show-code-marker {
+              hermeneutics-code-marker(if hidden-lines > 0 [HERMENEUTICS\ CODE EXCERPT] else [HERMENEUTICS\ CODE], kind: "start", dy: marker.at("start-dy", default: marker-def.at("start-dy")))
+            }
             #code-body
-            #hermeneutics-code-marker([END], kind: "end", dy: marker.at("end-dy", default: marker-def.at("end-dy")))
+            #if show-code-marker {
+              hermeneutics-code-marker([END], kind: "end", dy: marker.at("end-dy", default: marker-def.at("end-dy")))
+            }
             #p-skip.update(false)
           ]
         } else if in-narrative-code-block.get() {
@@ -1373,6 +1389,13 @@
   show figure.where(kind: "video"): left-figure
 
   // Hand-authored native Typst tables (not pipeline tablex) may still use show table.
+
+  // In-text citations in italic (JDH-084). Confirmed by Mirjam and Marion on
+  // 20 Nov as a JDH house rule: italics make a citation easier to pick out when
+  // reading the PDF. APA 7th sets them roman, so this is a deliberate departure
+  // and applies to the in-text citation only — the reference list is untouched,
+  // since its entries are not `cite` elements.
+  show cite: it => emph(it)
 
   // APA 7th unless a CSL file is supplied (`csl` option, JDH-078). `template.typ`
   // passes the same style to its own `#jdh-bibliography` call, which wins; this
