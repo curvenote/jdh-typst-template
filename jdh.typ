@@ -613,6 +613,24 @@
 // - MyST takes a "DOI" from any URL containing "10" and digits (e.g. archive.org/post/1009990/...):
 //   drop any DOI that does not start with "10.".
 #let jdh-bib-months = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
+// jdh-cli hides the access date in `note` because MyST's bibliography rebuild keeps `note`
+// and drops `urldate` (JDH-083). Lift it back into a real `urldate` field and take the
+// marker out of the note, so APA prints "Retrieved <date>, from <url>".
+#let jdh-urldate-marker = "jdh-urldate="
+#let jdh-restore-urldate(entry) = {
+  let found = entry.find(regex(jdh-urldate-marker + "(\d{4}-\d{2}-\d{2})"))
+  if found == none { return entry }
+  let date = found.slice(jdh-urldate-marker.len())
+  entry
+    // Drop the marker, and the "; " that joined it to whatever note was already there.
+    .replace(regex(";?\s*" + jdh-urldate-marker + "\d{4}-\d{2}-\d{2}"), "")
+    // An entry always has a url when it has an access date, so anchor on that line.
+    .replace(
+      regex("(?m)^(\s*url\s*=\s*\{[^}\n]*\},?[ \t]*\r?\n)"),
+      m => m.captures.at(0) + "\turldate = {" + date + "},\n",
+    )
+}
+
 #let jdh-clean-bib(src) = {
   src
     .replace(regex("(\bmonth\s*=\s*)\{0?(\d{1,2})\}"), m => {
@@ -629,6 +647,7 @@
     // Typst's APA style links only the DOI itself, not the "https://doi.org/" before it,
     // but links a URL in full. Give each entry with a DOI that as its URL instead (same text).
     .split("\n@")
+    .map(jdh-restore-urldate)
     .map(entry => {
       let doi = entry.find(regex("(?m)^\s*doi\s*=\s*\{10\.[^}\n]*\}"))
       if doi == none { return entry }
